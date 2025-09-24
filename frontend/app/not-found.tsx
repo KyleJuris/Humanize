@@ -1,5 +1,7 @@
 // app/not-found.tsx
-export default function NotFound() {
+"use client";
+
+function NotFound() {
   return (
     <main style={{ padding: 24 }}>
       <h1>Page not found</h1>
@@ -7,3 +9,5 @@ export default function NotFound() {
     </main>
   );
 }
+
+export default NotFound;
