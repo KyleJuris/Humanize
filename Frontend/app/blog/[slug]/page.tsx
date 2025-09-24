@@ -7,9 +7,9 @@ interface BlogPostPageProps {
   }
 }
 
-// Generate static params for static export
+// Generate static params for ISR (Incremental Static Regeneration)
 export async function generateStaticParams() {
-  // For static export, we need to pre-generate all possible blog post slugs
+  // For Vercel, we can use ISR to generate pages on-demand
   // In a real app, this would fetch from a CMS or database
   return [
     { slug: 'future-of-ai-text-humanization' },
