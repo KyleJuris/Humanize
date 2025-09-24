@@ -16,6 +16,10 @@ const nextConfig = {
   assetPrefix: process.env.NODE_ENV === 'production' ? '/Humanize/' : '',
   skipTrailingSlashRedirect: true,
   skipMiddlewareUrlNormalize: true,
+  experimental: {
+    // Enable build caching
+    buildCache: true,
+  },
 }
 
 export default nextConfig

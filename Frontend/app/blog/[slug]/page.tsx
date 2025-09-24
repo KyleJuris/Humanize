@@ -7,6 +7,18 @@ interface BlogPostPageProps {
   }
 }
 
+// Generate static params for static export
+export async function generateStaticParams() {
+  // For static export, we need to pre-generate all possible blog post slugs
+  // In a real app, this would fetch from a CMS or database
+  return [
+    { slug: 'future-of-ai-text-humanization' },
+    { slug: 'ai-content-marketing-strategy' },
+    { slug: 'writing-improvement-with-ai' },
+    { slug: 'ethics-ai-responsibility' },
+  ]
+}
+
 export default function BlogPostPage({ params }: BlogPostPageProps) {
   // Mock blog post data - in a real app, this would be fetched based on the slug
   const post = {
