@@ -11,8 +11,11 @@ const nextConfig = {
   },
   output: 'export',
   trailingSlash: true,
+  distDir: 'out',
   basePath: process.env.NODE_ENV === 'production' ? '/Humanize' : '',
   assetPrefix: process.env.NODE_ENV === 'production' ? '/Humanize/' : '',
+  skipTrailingSlashRedirect: true,
+  skipMiddlewareUrlNormalize: true,
 }
 
 export default nextConfig

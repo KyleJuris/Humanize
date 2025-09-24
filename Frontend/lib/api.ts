@@ -1,4 +1,6 @@
 // API service layer
+import { supabase } from '@/lib/supabase'
+
 export interface HumanizeResponse {
   outputText: string
   versionId: string
@@ -142,9 +144,6 @@ export const api = {
 
   async logout() {
     try {
-      // Import supabase client for logout
-      const { supabase } = await import('@/lib/supabase')
-      
       if (supabase) {
         // Sign out from Supabase
         const { error } = await supabase.auth.signOut()
@@ -172,7 +171,6 @@ export const api = {
 
   async getProfile() {
     try {
-      const { supabase } = await import('@/lib/supabase')
       if (supabase) {
         const { data: { user } } = await supabase.auth.getUser()
         if (user) {
