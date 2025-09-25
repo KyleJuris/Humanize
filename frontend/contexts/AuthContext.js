@@ -72,12 +72,22 @@ export const AuthProvider = ({ children }) => {
 
   const handleAuthCallback = async (token) => {
     try {
+      console.log('🔐 Setting token:', token ? 'Token received' : 'No token');
       api.setToken(token);
+      
+      console.log('👤 Getting current user...');
       const userData = await api.getCurrentUser();
-      setUser(userData.user);
-      return userData.user;
+      console.log('👤 User data received:', userData);
+      
+      if (userData && userData.user) {
+        setUser(userData.user);
+        console.log('✅ User set in context:', userData.user);
+        return userData.user;
+      } else {
+        throw new Error('No user data received from API');
+      }
     } catch (error) {
-      console.error('Auth callback failed:', error);
+      console.error('❌ Auth callback failed:', error);
       throw error;
     }
   };

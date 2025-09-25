@@ -22,30 +22,80 @@ export default function AuthCallback() {
           process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx4aWJreGRkbGd4dWZ2cWNlcXRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyMzgzNjMsImV4cCI6MjA3MzgxNDM2M30.placeholder'
         )
 
-        // Get the session from Supabase
-        const { data: { session }, error } = await supabase.auth.getSession()
+        // Handle the auth callback by processing the URL hash
+        console.log('🔍 Current URL:', window.location.href)
+        console.log('🔍 URL Hash:', window.location.hash)
+        console.log('🔍 URL Search:', window.location.search)
+        
+        const { data, error } = await supabase.auth.getSession()
+        console.log('🔍 Session data:', data)
+        console.log('🔍 Session error:', error)
 
         if (error) {
+          console.error('Session error:', error)
           throw new Error(`Session error: ${error.message}`)
         }
 
-        if (!session) {
-          throw new Error('No active session found')
-        }
-
-        // Handle the auth callback with the session token
-        const user = await handleAuthCallback(session.access_token)
-        
-        if (user) {
-          setStatus('success')
-          setMessage('Authentication successful! Redirecting to dashboard...')
+        if (!data.session) {
+          // Try to get session from URL hash if no session exists
+          const hashParams = new URLSearchParams(window.location.hash.substring(1))
+          const accessToken = hashParams.get('access_token')
+          const refreshToken = hashParams.get('refresh_token')
           
-          // Redirect to dashboard after successful auth
-          setTimeout(() => {
-            router.push('/dashboard/humanizer')
-          }, 1500)
+          console.log('🔍 Hash params:', Object.fromEntries(hashParams))
+          console.log('🔍 Access token:', accessToken ? 'Found' : 'Not found')
+          console.log('🔍 Refresh token:', refreshToken ? 'Found' : 'Not found')
+          
+          if (accessToken && refreshToken) {
+            // Set the session manually
+            const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken
+            })
+            
+            if (sessionError) {
+              throw new Error(`Session setup error: ${sessionError.message}`)
+            }
+            
+            if (!sessionData.session) {
+              throw new Error('Failed to establish session')
+            }
+            
+            // Now handle the auth callback
+            const user = await handleAuthCallback(sessionData.session.access_token)
+            
+            if (user) {
+              setStatus('success')
+              setMessage('Authentication successful! Redirecting to dashboard...')
+              
+              // Clear the URL hash
+              window.history.replaceState({}, document.title, window.location.pathname)
+              
+              // Redirect to dashboard after successful auth
+              setTimeout(() => {
+                router.push('/dashboard/humanizer')
+              }, 1500)
+            } else {
+              throw new Error('Failed to authenticate user')
+            }
+          } else {
+            throw new Error('No active session found')
+          }
         } else {
-          throw new Error('Failed to authenticate user')
+          // Session already exists, handle the auth callback
+          const user = await handleAuthCallback(data.session.access_token)
+          
+          if (user) {
+            setStatus('success')
+            setMessage('Authentication successful! Redirecting to dashboard...')
+            
+            // Redirect to dashboard after successful auth
+            setTimeout(() => {
+              router.push('/dashboard/humanizer')
+            }, 1500)
+          } else {
+            throw new Error('Failed to authenticate user')
+          }
         }
 
       } catch (error) {
