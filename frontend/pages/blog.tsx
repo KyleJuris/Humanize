@@ -6,7 +6,7 @@ export default function BlogPage() {
   return (
     <>
       <Head>
-        <title>Blog - Natural Write</title>
+        <title>Blog - Humanizer Pro</title>
         <meta name="description" content="Latest insights on AI text humanization" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
@@ -48,13 +48,13 @@ export default function BlogPage() {
                 📝
               </div>
               <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#1f2937' }}>
-                Natural Write
+                Humanizer Pro
               </span>
             </div>
 
             {/* Navigation */}
             <nav style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
-              <Link href="/humanizer" style={{ color: '#374151', textDecoration: 'none', fontSize: '0.95rem' }}>Humanizer</Link>
+              <Link href="/dashboard/humanizer" style={{ color: '#374151', textDecoration: 'none', fontSize: '0.95rem' }}>Humanizer</Link>
               <Link href="/blog" style={{ color: '#10b981', textDecoration: 'none', fontSize: '0.95rem', fontWeight: '600' }}>Blog</Link>
               <Link href="/contact" style={{ color: '#374151', textDecoration: 'none', fontSize: '0.95rem' }}>Contact</Link>
               <Link href="/pricing" style={{ color: '#374151', textDecoration: 'none', fontSize: '0.95rem' }}>Pricing</Link>

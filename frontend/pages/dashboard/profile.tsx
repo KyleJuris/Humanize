@@ -6,7 +6,7 @@ export default function ProfilePage() {
   return (
     <>
       <Head>
-        <title>Profile - Natural Write</title>
+        <title>Profile - Humanizer Pro</title>
         <meta name="description" content="Manage your account and settings" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
@@ -19,9 +19,12 @@ export default function ProfilePage() {
       }}>
         {/* Header */}
         <header style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 1000,
           padding: '1rem 2rem',
           borderBottom: '1px solid rgba(0,0,0,0.1)',
-          backgroundColor: 'rgba(255,255,255,0.9)',
+          backgroundColor: 'rgba(255,255,255,0.95)',
           backdropFilter: 'blur(10px)'
         }}>
           <div style={{
@@ -32,7 +35,7 @@ export default function ProfilePage() {
             justifyContent: 'space-between'
           }}>
             {/* Logo */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}>
               <div style={{
                 width: '32px',
                 height: '32px',
@@ -48,13 +51,13 @@ export default function ProfilePage() {
                 📝
               </div>
               <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#1f2937' }}>
-                Natural Write
+                Humanizer Pro
               </span>
-            </div>
+            </Link>
 
             {/* Navigation */}
             <nav style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
-              <Link href="/humanizer" style={{ color: '#374151', textDecoration: 'none', fontSize: '0.95rem' }}>Humanizer</Link>
+              <Link href="/dashboard/humanizer" style={{ color: '#374151', textDecoration: 'none', fontSize: '0.95rem' }}>Humanizer</Link>
               <Link href="/blog" style={{ color: '#374151', textDecoration: 'none', fontSize: '0.95rem' }}>Blog</Link>
               <Link href="/contact" style={{ color: '#374151', textDecoration: 'none', fontSize: '0.95rem' }}>Contact</Link>
               <Link href="/pricing" style={{ color: '#374151', textDecoration: 'none', fontSize: '0.95rem' }}>Pricing</Link>
@@ -62,33 +65,23 @@ export default function ProfilePage() {
 
             {/* User Actions */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <Link href="/profile" style={{ color: '#10b981', textDecoration: 'none', fontSize: '0.95rem', fontWeight: '600' }}>Profile</Link>
-              <div style={{
-                width: '32px',
-                height: '32px',
-                backgroundColor: '#f3f4f6',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer'
-              }}>
-                🔄
-              </div>
-              <div style={{
-                width: '32px',
-                height: '32px',
-                backgroundColor: '#8b5cf6',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'white',
-                fontWeight: 'bold',
-                cursor: 'pointer'
-              }}>
-                K
-              </div>
+              <Link href="/dashboard/profile">
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  backgroundColor: '#8b5cf6',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  border: '2px solid #10b981'
+                }}>
+                  K
+                </div>
+              </Link>
             </div>
           </div>
         </header>

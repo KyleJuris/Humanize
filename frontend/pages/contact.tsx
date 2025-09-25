@@ -6,7 +6,7 @@ export default function ContactPage() {
   return (
     <>
       <Head>
-        <title>Contact - Natural Write</title>
+        <title>Contact - Humanizer Pro</title>
         <meta name="description" content="Get in touch with our team" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
@@ -48,13 +48,13 @@ export default function ContactPage() {
                 📝
               </div>
               <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#1f2937' }}>
-                Natural Write
+                Humanizer Pro
               </span>
             </div>
 
             {/* Navigation */}
             <nav style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
-              <Link href="/humanizer" style={{ color: '#374151', textDecoration: 'none', fontSize: '0.95rem' }}>Humanizer</Link>
+              <Link href="/dashboard/humanizer" style={{ color: '#374151', textDecoration: 'none', fontSize: '0.95rem' }}>Humanizer</Link>
               <Link href="/blog" style={{ color: '#374151', textDecoration: 'none', fontSize: '0.95rem' }}>Blog</Link>
               <Link href="/contact" style={{ color: '#10b981', textDecoration: 'none', fontSize: '0.95rem', fontWeight: '600' }}>Contact</Link>
               <Link href="/pricing" style={{ color: '#374151', textDecoration: 'none', fontSize: '0.95rem' }}>Pricing</Link>

@@ -6,7 +6,7 @@ export default function PricingPage() {
   return (
     <>
       <Head>
-        <title>Pricing - Natural Write</title>
+        <title>Pricing - Humanizer Pro</title>
         <meta name="description" content="Choose the perfect plan for your needs" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
@@ -48,13 +48,13 @@ export default function PricingPage() {
                 📝
               </div>
               <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#1f2937' }}>
-                Natural Write
+                Humanizer Pro
               </span>
             </div>
 
             {/* Navigation */}
             <nav style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
-              <Link href="/humanizer" style={{ color: '#374151', textDecoration: 'none', fontSize: '0.95rem' }}>Humanizer</Link>
+              <Link href="/dashboard/humanizer" style={{ color: '#374151', textDecoration: 'none', fontSize: '0.95rem' }}>Humanizer</Link>
               <Link href="/blog" style={{ color: '#374151', textDecoration: 'none', fontSize: '0.95rem' }}>Blog</Link>
               <Link href="/contact" style={{ color: '#374151', textDecoration: 'none', fontSize: '0.95rem' }}>Contact</Link>
               <Link href="/pricing" style={{ color: '#10b981', textDecoration: 'none', fontSize: '0.95rem', fontWeight: '600' }}>Pricing</Link>
