@@ -438,14 +438,16 @@ export default function HumanizerPage() {
           </div>
 
           {/* Main Content Area */}
-          <div style={{ flex: 1, padding: '2rem' }}>
+          <div style={{ flex: 1, padding: '2rem', display: 'flex', justifyContent: 'center' }}>
             <div style={{
               backgroundColor: 'white',
               borderRadius: '12px',
               padding: '2rem',
               boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
-              border: '1px solid rgba(0,0,0,0.05)',
-              minHeight: '600px'
+              border: '2px solid rgba(0,0,0,0.1)',
+              minHeight: '600px',
+              maxWidth: '800px',
+              width: '100%'
             }}>
               {/* Header */}
               <div style={{
@@ -465,9 +467,9 @@ export default function HumanizerPage() {
                 gap: '1.5rem',
                 marginBottom: '1.5rem',
                 padding: '1rem',
-                backgroundColor: '#f0fdf4',
+                backgroundColor: '#f9fafb',
                 borderRadius: '8px',
-                border: '1px solid #bbf7d0',
+                border: '2px solid #e5e7eb',
                 alignItems: 'center',
                 maxWidth: '500px'
               }}>
@@ -516,6 +518,27 @@ export default function HumanizerPage() {
                       appearance: 'none'
                     }}
                   />
+                  <style jsx>{`
+                    input[type="range"]::-webkit-slider-thumb {
+                      appearance: none;
+                      height: 20px;
+                      width: 20px;
+                      border-radius: 50%;
+                      background: #10b981;
+                      cursor: pointer;
+                      border: 2px solid white;
+                      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                    }
+                    input[type="range"]::-moz-range-thumb {
+                      height: 20px;
+                      width: 20px;
+                      border-radius: 50%;
+                      background: #10b981;
+                      cursor: pointer;
+                      border: 2px solid white;
+                      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                    }
+                  `}</style>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#6b7280', marginTop: '0.25rem' }}>
                     <span>Subtle</span>
                     <span>Strong</span>
@@ -532,14 +555,14 @@ export default function HumanizerPage() {
                   style={{
                     width: '100%',
                     minHeight: '200px',
-                    border: '1px solid #bbf7d0',
+                    border: '2px solid #e5e7eb',
                     borderRadius: '8px',
                     padding: '1rem',
                     fontSize: '1rem',
                     fontFamily: 'inherit',
                     resize: 'vertical',
                     outline: 'none',
-                    backgroundColor: inputText ? 'white' : '#f0fdf4'
+                    backgroundColor: inputText ? 'white' : '#f9fafb'
                   }}
                 />
                 
@@ -659,9 +682,9 @@ export default function HumanizerPage() {
                       {outputText ? (
                         <div style={{
                           padding: '1rem',
-                          backgroundColor: '#f0f9ff',
+                          backgroundColor: '#f9fafb',
                           borderRadius: '8px',
-                          border: '1px solid #e0f2fe'
+                          border: '2px solid #e5e7eb'
                         }}>
                           <h4 style={{ color: '#374151', marginBottom: '0.5rem' }}>Humanized Text:</h4>
                           <p style={{ color: '#1f2937', lineHeight: '1.6' }}>{outputText}</p>
