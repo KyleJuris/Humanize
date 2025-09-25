@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { useAuth } from '../../contexts/AuthContext'
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '../../lib/supabase'
 
 export default function AuthCallback() {
   const router = useRouter()
@@ -16,17 +16,14 @@ export default function AuthCallback() {
         setStatus('processing')
         setMessage('Completing authentication...')
 
-        // Create Supabase client
-        const supabase = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://lxibkxddlgxufvqceqtn.supabase.co',
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx4aWJreGRkbGd4dWZ2cWNlcXRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyMzgzNjMsImV4cCI6MjA3MzgxNDM2M30.placeholder'
-        )
-
-        // Handle the auth callback by processing the URL hash
         console.log('🔍 Current URL:', window.location.href)
         console.log('🔍 URL Hash:', window.location.hash)
         console.log('🔍 URL Search:', window.location.search)
-        
+
+        // Wait a moment for Supabase to detect and process the session from URL
+        await new Promise(resolve => setTimeout(resolve, 1000))
+
+        // Get the session - Supabase should have automatically detected it from URL
         const { data, error } = await supabase.auth.getSession()
         console.log('🔍 Session data:', data)
         console.log('🔍 Session error:', error)
@@ -37,65 +34,26 @@ export default function AuthCallback() {
         }
 
         if (!data.session) {
-          // Try to get session from URL hash if no session exists
-          const hashParams = new URLSearchParams(window.location.hash.substring(1))
-          const accessToken = hashParams.get('access_token')
-          const refreshToken = hashParams.get('refresh_token')
+          throw new Error('No active session found. Please try signing in again.')
+        }
+
+        // Handle the auth callback with the session token
+        console.log('🔐 Processing session for user:', data.session.user.email)
+        const user = await handleAuthCallback(data.session.access_token)
+        
+        if (user) {
+          setStatus('success')
+          setMessage('Authentication successful! Redirecting to dashboard...')
           
-          console.log('🔍 Hash params:', Object.fromEntries(hashParams))
-          console.log('🔍 Access token:', accessToken ? 'Found' : 'Not found')
-          console.log('🔍 Refresh token:', refreshToken ? 'Found' : 'Not found')
+          // Clear the URL hash to remove sensitive tokens
+          window.history.replaceState({}, document.title, window.location.pathname)
           
-          if (accessToken && refreshToken) {
-            // Set the session manually
-            const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken
-            })
-            
-            if (sessionError) {
-              throw new Error(`Session setup error: ${sessionError.message}`)
-            }
-            
-            if (!sessionData.session) {
-              throw new Error('Failed to establish session')
-            }
-            
-            // Now handle the auth callback
-            const user = await handleAuthCallback(sessionData.session.access_token)
-            
-            if (user) {
-              setStatus('success')
-              setMessage('Authentication successful! Redirecting to dashboard...')
-              
-              // Clear the URL hash
-              window.history.replaceState({}, document.title, window.location.pathname)
-              
-              // Redirect to dashboard after successful auth
-              setTimeout(() => {
-                router.push('/dashboard/humanizer')
-              }, 1500)
-            } else {
-              throw new Error('Failed to authenticate user')
-            }
-          } else {
-            throw new Error('No active session found')
-          }
+          // Redirect to dashboard after successful auth
+          setTimeout(() => {
+            router.push('/dashboard/humanizer')
+          }, 1500)
         } else {
-          // Session already exists, handle the auth callback
-          const user = await handleAuthCallback(data.session.access_token)
-          
-          if (user) {
-            setStatus('success')
-            setMessage('Authentication successful! Redirecting to dashboard...')
-            
-            // Redirect to dashboard after successful auth
-            setTimeout(() => {
-              router.push('/dashboard/humanizer')
-            }, 1500)
-          } else {
-            throw new Error('Failed to authenticate user')
-          }
+          throw new Error('Failed to authenticate user')
         }
 
       } catch (error) {
