@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: humanize-pro-backend
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: SUPABASE_URL
+        value: https://lxibkxddlgxufvqceqtn.supabase.co
+      - key: SUPABASE_ANON_KEY
+        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx4aWJreGRkbGd4dWZ2cWNlcXRuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1ODIzODM2MywiZXhwIjoyMDczODE0MzYzfQ.QDkoereRoYzUzxHeom2krjTIJj9WELP4v7iCTuihSzE
+      - key: FRONTEND_URL
+        value: https://humanize-pro.vercel.app
+      - key: LLM_API_KEY
+        value: placeholder-api-key
+      - key: LLM_MODEL
+        value: gpt-4o-mini
+      - key: LLM_ENDPOINT
+        value: https://api.openai.com/v1/chat/completions
+      - key: LLM_MAX_TOKENS
+        value: 2000
+      - key: LLM_TEMPERATURE
+        value: 0.7
+      - key: OPENAI_API_KEY
+        value: your-openai-api-key-here

@@ -1,18 +1,29 @@
-﻿const express = require('express');
+const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 5000;
 
-console.log(' SERVER STARTING...');
-console.log(' Port:', PORT);
-console.log(' Environment:', process.env.NODE_ENV || 'development');
+console.log(' SERVER.JS SCRIPT STARTING...');
+console.log(' Using port:', PORT);
 
 app.use(helmet());
-app.use(cors());
+
+const corsOptions = {
+  origin: [
+    'http://localhost:3000',
+    'https://humanize-pro.vercel.app',
+    'https://humanize-pro-git-main-kylejuris.vercel.app'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
 app.use(morgan('combined'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -29,8 +40,33 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'healthy' });
 });
 
-app.use('/api', (req, res) => {
-  res.json({ message: 'API endpoints coming soon!' });
+console.log(' About to load routes...');
+try {
+  console.log(' Loading route modules...');
+  const authRoutes = require('./routes/auth');
+  const projectsRoutes = require('./routes/projects');
+  const profilesRoutes = require('./routes/profiles');
+  console.log(' Route modules loaded successfully');
+
+  console.log(' Registering API routes...');
+  app.use('/api/auth', authRoutes);
+  app.use('/api/projects', projectsRoutes);
+  app.use('/api/profiles', profilesRoutes);
+  console.log(' API routes registered successfully');
+} catch (error) {
+  console.error(' Error loading routes:', error);
+}
+
+app.get('/api', (req, res) => {
+  res.json({ 
+    message: 'Humanizer Pro API',
+    version: '1.0.0',
+    endpoints: {
+      auth: '/api/auth',
+      projects: '/api/projects',
+      profiles: '/api/profiles'
+    }
+  });
 });
 
 app.use((err, req, res, next) => {
@@ -39,50 +75,33 @@ app.use((err, req, res, next) => {
 });
 
 app.use('*', (req, res) => {
-  res.status(404).json({ error: 'Route not found' });
+  console.log(` 404 - Route not found: ${req.method} ${req.originalUrl}`);
+  res.status(404).json({ 
+    error: 'Route not found',
+    method: req.method,
+    url: req.originalUrl,
+    timestamp: new Date().toISOString()
+  });
 });
 
+console.log(' ATTEMPTING TO START SERVER...');
 const server = app.listen(PORT, '0.0.0.0', () => {
-  console.log(' Server successfully started on port', PORT);
-  console.log(' Server listening on 0.0.0.0:' + PORT);
-  console.log(' Backend API is ready!');
+  console.log(` Server successfully bound to port ${PORT}`);
+  console.log(` Server listening on 0.0.0.0:${PORT}`);
+  console.log(` Backend API is ready!`);
 });
 
 server.on('error', (err) => {
   console.error(' Server failed to start:', err);
-  if (err.code === 'EADDRINUSE') {
-    console.error(' Port', PORT, 'is already in use');
-  }
   process.exit(1);
 });
 
-process.on('uncaughtException', (err) => {
-  console.error(' Uncaught Exception:', err);
-  process.exit(1);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-  console.error(' Unhandled Rejection:', reason);
-  process.exit(1);
-});
-
-const gracefulShutdown = (signal) => {
-  console.log(' Received', signal, '. Graceful shutdown...');
+process.on('SIGINT', () => {
+  console.log(' Received SIGINT. Graceful shutdown...');
   server.close(() => {
     console.log(' HTTP server closed');
     process.exit(0);
   });
-  setTimeout(() => {
-    console.error(' Force shutdown');
-    process.exit(1);
-  }, 10000);
-};
-
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-
-setInterval(() => {
-  console.log(' Heartbeat -', new Date().toISOString());
-}, 30000);
+});
 
 module.exports = app;

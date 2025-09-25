@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
+import Header from '../components/Header'
 import { useAuth } from '../contexts/AuthContext'
 
 export default function AuthPage() {
@@ -44,79 +45,7 @@ export default function AuthPage() {
         background: 'linear-gradient(135deg, #f0f9ff 0%, #fefce8 100%)',
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
       }}>
-        {/* Header */}
-        <header style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 1000,
-          padding: '1rem 2rem',
-          borderBottom: '1px solid rgba(0,0,0,0.1)',
-          backgroundColor: 'rgba(255,255,255,0.95)',
-          backdropFilter: 'blur(10px)'
-        }}>
-          <div style={{
-            maxWidth: '1200px',
-            margin: '0 auto',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between'
-          }}>
-            {/* Logo */}
-            <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}>
-              <div style={{
-                width: '32px',
-                height: '32px',
-                backgroundColor: '#10b981',
-                borderRadius: '6px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'white',
-                fontSize: '18px',
-                fontWeight: 'bold'
-              }}>
-                📝
-              </div>
-              <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#1f2937' }}>
-                Humanizer Pro
-              </span>
-            </Link>
-
-            {/* Centered Navigation */}
-            <nav style={{ 
-              display: 'flex', 
-              gap: '2rem', 
-              alignItems: 'center',
-              position: 'absolute',
-              left: '50%',
-              transform: 'translateX(-50%)'
-            }}>
-              <Link href="/dashboard/humanizer" style={{ color: '#374151', textDecoration: 'none', fontSize: '0.95rem' }}>Humanizer</Link>
-              <Link href="/blog" style={{ color: '#374151', textDecoration: 'none', fontSize: '0.95rem' }}>Blog</Link>
-              <Link href="/contact" style={{ color: '#374151', textDecoration: 'none', fontSize: '0.95rem' }}>Contact</Link>
-              <Link href="/pricing" style={{ color: '#374151', textDecoration: 'none', fontSize: '0.95rem' }}>Pricing</Link>
-            </nav>
-
-            {/* User Actions */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <Link href="/auth">
-                <button style={{
-                  backgroundColor: '#10b981',
-                  color: 'white',
-                  border: 'none',
-                  padding: '0.5rem 1rem',
-                  borderRadius: '6px',
-                  fontSize: '0.9rem',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  textDecoration: 'none'
-                }}>
-                  Sign In
-                </button>
-              </Link>
-            </div>
-          </div>
-        </header>
+        <Header currentPage="auth" />
 
         {/* Auth Form Container */}
         <div style={{

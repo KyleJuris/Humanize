@@ -1,9 +1,9 @@
-import React, { useState } from 'react'
+import React from 'react'
 import Head from 'next/head'
-import Link from 'next/link'
+import Header from '../../components/Header'
+import ProtectedRoute from '../../components/ProtectedRoute'
 
 export default function ProfilePage() {
-  const [isLoggedIn, setIsLoggedIn] = useState(true) // This would come from auth context in real app
   return (
     <>
       <Head>
@@ -13,116 +13,16 @@ export default function ProfilePage() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       
-      <div style={{ 
-        minHeight: '100vh', 
-        background: 'linear-gradient(135deg, #f0f9ff 0%, #fefce8 100%)',
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-      }}>
-        {/* Header */}
-        <header style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 1000,
-          padding: '1rem 2rem',
-          borderBottom: '1px solid rgba(0,0,0,0.1)',
-          backgroundColor: 'rgba(255,255,255,0.95)',
-          backdropFilter: 'blur(10px)'
+      <ProtectedRoute>
+        <div style={{ 
+          minHeight: '100vh', 
+          background: 'linear-gradient(135deg, #f0f9ff 0%, #fefce8 100%)',
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
         }}>
-          <div style={{
-            maxWidth: '1200px',
-            margin: '0 auto',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between'
-          }}>
-            {/* Logo */}
-            <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}>
-              <div style={{
-                width: '32px',
-                height: '32px',
-                backgroundColor: '#10b981',
-                borderRadius: '6px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'white',
-                fontSize: '18px',
-                fontWeight: 'bold'
-              }}>
-                📝
-              </div>
-              <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#1f2937' }}>
-                Humanizer Pro
-              </span>
-            </Link>
+          <Header currentPage="profile" />
 
-            {/* Navigation */}
-            <nav style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
-              <Link href="/dashboard/humanizer" style={{ color: '#374151', textDecoration: 'none', fontSize: '0.95rem' }}>Humanizer</Link>
-              <Link href="/blog" style={{ color: '#374151', textDecoration: 'none', fontSize: '0.95rem' }}>Blog</Link>
-              <Link href="/contact" style={{ color: '#374151', textDecoration: 'none', fontSize: '0.95rem' }}>Contact</Link>
-              <Link href="/pricing" style={{ color: '#374151', textDecoration: 'none', fontSize: '0.95rem' }}>Pricing</Link>
-            </nav>
-
-            {/* User Actions */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              {isLoggedIn ? (
-                <>
-                  <button 
-                    onClick={() => setIsLoggedIn(false)}
-                    style={{
-                      backgroundColor: '#ef4444',
-                      color: 'white',
-                      border: 'none',
-                      padding: '0.5rem 1rem',
-                      borderRadius: '6px',
-                      fontSize: '0.9rem',
-                      fontWeight: '500',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Sign Out
-                  </button>
-                  <Link href="/dashboard/profile">
-                    <div style={{
-                      width: '32px',
-                      height: '32px',
-                      backgroundColor: '#8b5cf6',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'white',
-                      fontWeight: 'bold',
-                      cursor: 'pointer',
-                      border: '2px solid #10b981'
-                    }}>
-                      K
-                    </div>
-                  </Link>
-                </>
-              ) : (
-                <Link href="/auth">
-                  <button style={{
-                    backgroundColor: '#10b981',
-                    color: 'white',
-                    border: 'none',
-                    padding: '0.5rem 1rem',
-                    borderRadius: '6px',
-                    fontSize: '0.9rem',
-                    fontWeight: '500',
-                    cursor: 'pointer'
-                  }}>
-                    Sign In
-                  </button>
-                </Link>
-              )}
-            </div>
-          </div>
-        </header>
-
-        {/* Main Content */}
-        <main style={{ padding: '3rem 2rem', maxWidth: '1200px', margin: '0 auto' }}>
+          {/* Main Content */}
+          <main style={{ padding: '3rem 2rem', maxWidth: '1200px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
             <h1 style={{
               fontSize: '3rem',
@@ -412,8 +312,9 @@ export default function ProfilePage() {
               </div>
             </div>
           </div>
-        </main>
-      </div>
+          </main>
+        </div>
+      </ProtectedRoute>
     </>
   )
 }

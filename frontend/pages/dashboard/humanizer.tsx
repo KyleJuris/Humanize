@@ -1,8 +1,13 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
+import Header from '../../components/Header'
+import ProtectedRoute from '../../components/ProtectedRoute'
+import { useAuth } from '../../contexts/AuthContext'
+import api from '../../lib/api'
 
 export default function HumanizerPage() {
+  const { user, isAuthenticated } = useAuth()
   const [inputText, setInputText] = useState('')
   const [outputText, setOutputText] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
@@ -10,18 +15,34 @@ export default function HumanizerPage() {
   const [intensity, setIntensity] = useState(50)
   const [tone, setTone] = useState('neutral')
   const [activeTab, setActiveTab] = useState('output')
-  const [isLoggedIn, setIsLoggedIn] = useState(true) // This would come from auth context in real app
-  const [projects, setProjects] = useState([
-    { id: 1, name: 'Academic Paper', lastModified: '2 hours ago', category: 'academic' },
-    { id: 2, name: 'Marketing Copy', lastModified: '1 day ago', category: 'marketing' },
-    { id: 3, name: 'Blog Post', lastModified: '3 days ago', category: 'blog' },
-    { id: 4, name: 'Email Campaign', lastModified: '1 week ago', category: 'marketing' },
-  ])
+  const [projects, setProjects] = useState([])
   const [selectedProject, setSelectedProject] = useState(null)
-  const [editingProject, setEditingProject] = useState(null)
+  const [editingProject, setEditingProject] = useState<number | null>(null)
   const [newProjectName, setNewProjectName] = useState('')
   const [filterCategory, setFilterCategory] = useState('all')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null)
+  const [loadingProjects, setLoadingProjects] = useState(false)
+
+  // Fetch user projects on component mount and when user changes
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      fetchProjects()
+    }
+  }, [isAuthenticated, user])
+
+  const fetchProjects = async () => {
+    try {
+      setLoadingProjects(true)
+      const response = await api.getProjects()
+      setProjects(response.projects || [])
+    } catch (error) {
+      console.error('Error fetching projects:', error)
+      // Fallback to empty array if API fails
+      setProjects([])
+    } finally {
+      setLoadingProjects(false)
+    }
+  }
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const text = e.target.value
@@ -72,27 +93,58 @@ export default function HumanizerPage() {
     }
   }
 
-  const handleCreateProject = () => {
+  const handleCreateProject = async () => {
     if (newProjectName.trim()) {
-      const newProject = {
-        id: Date.now(),
-        name: newProjectName,
-        lastModified: 'Just now',
-        category: 'general'
+      try {
+        const projectData = {
+          title: newProjectName.trim(),
+          input_text: inputText,
+          output_text: outputText,
+          intensity: intensity,
+          tone: tone
+        }
+        const response = await api.createProject(projectData)
+        setProjects([response.project, ...projects])
+        setNewProjectName('')
+      } catch (error) {
+        console.error('Error creating project:', error)
+        // Fallback to local state if API fails
+        const newProject = {
+          id: Date.now(),
+          title: newProjectName.trim(),
+          created_at: new Date().toISOString(),
+          category: 'general'
+        }
+        setProjects([newProject, ...projects])
+        setNewProjectName('')
       }
-      setProjects([newProject, ...projects])
-      setNewProjectName('')
     }
   }
 
-  const handleRenameProject = (id: string, newName: string) => {
-    setProjects(projects.map(p => p.id === id ? { ...p, name: newName } : p))
-    setEditingProject(null)
+  const handleRenameProject = async (id: number, newName: string) => {
+    try {
+      await api.updateProject(id, { title: newName })
+      setProjects(projects.map(p => p.id === id ? { ...p, title: newName } : p))
+      setEditingProject(null)
+    } catch (error) {
+      console.error('Error renaming project:', error)
+      // Fallback to local state if API fails
+      setProjects(projects.map(p => p.id === id ? { ...p, title: newName } : p))
+      setEditingProject(null)
+    }
   }
 
-  const handleDeleteProject = (id: number) => {
-    setProjects(projects.filter(p => p.id !== id))
-    setShowDeleteConfirm(null)
+  const handleDeleteProject = async (id: number) => {
+    try {
+      await api.deleteProject(id)
+      setProjects(projects.filter(p => p.id !== id))
+      setShowDeleteConfirm(null)
+    } catch (error) {
+      console.error('Error deleting project:', error)
+      // Fallback to local state if API fails
+      setProjects(projects.filter(p => p.id !== id))
+      setShowDeleteConfirm(null)
+    }
   }
 
   const filteredProjects = filterCategory === 'all' 
@@ -108,115 +160,16 @@ export default function HumanizerPage() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       
-      <div style={{ 
-        minHeight: '100vh', 
-        background: 'linear-gradient(135deg, #f0f9ff 0%, #fefce8 100%)',
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-      }}>
-        {/* Header */}
-        <header style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 1000,
-          padding: '1rem 2rem',
-          borderBottom: '1px solid rgba(0,0,0,0.1)',
-          backgroundColor: 'rgba(255,255,255,0.95)',
-          backdropFilter: 'blur(10px)'
+      <ProtectedRoute>
+        <div style={{ 
+          minHeight: '100vh', 
+          background: 'linear-gradient(135deg, #f0f9ff 0%, #fefce8 100%)',
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
         }}>
-          <div style={{
-            maxWidth: '1200px',
-            margin: '0 auto',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between'
-          }}>
-            {/* Logo */}
-            <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}>
-              <div style={{
-                width: '32px',
-                height: '32px',
-                backgroundColor: '#10b981',
-                borderRadius: '6px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'white',
-                fontSize: '18px',
-                fontWeight: 'bold'
-              }}>
-                📝
-              </div>
-              <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#1f2937' }}>
-                Humanizer Pro
-              </span>
-            </Link>
+          <Header currentPage="humanizer" />
 
-            {/* Navigation */}
-            <nav style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
-              <Link href="/dashboard/humanizer" style={{ color: '#10b981', textDecoration: 'none', fontSize: '0.95rem', fontWeight: '600' }}>Humanizer</Link>
-              <Link href="/blog" style={{ color: '#374151', textDecoration: 'none', fontSize: '0.95rem' }}>Blog</Link>
-              <Link href="/contact" style={{ color: '#374151', textDecoration: 'none', fontSize: '0.95rem' }}>Contact</Link>
-              <Link href="/pricing" style={{ color: '#374151', textDecoration: 'none', fontSize: '0.95rem' }}>Pricing</Link>
-            </nav>
-
-            {/* User Actions */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              {isLoggedIn ? (
-                <>
-                  <button 
-                    onClick={() => setIsLoggedIn(false)}
-                    style={{
-                      backgroundColor: '#ef4444',
-                      color: 'white',
-                      border: 'none',
-                      padding: '0.5rem 1rem',
-                      borderRadius: '6px',
-                      fontSize: '0.9rem',
-                      fontWeight: '500',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Sign Out
-                  </button>
-                  <Link href="/dashboard/profile">
-                    <div style={{
-                      width: '32px',
-                      height: '32px',
-                      backgroundColor: '#8b5cf6',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'white',
-                      fontWeight: 'bold',
-                      cursor: 'pointer'
-                    }}>
-                      K
-                    </div>
-                  </Link>
-                </>
-              ) : (
-                <Link href="/auth">
-                  <button style={{
-                    backgroundColor: '#10b981',
-                    color: 'white',
-                    border: 'none',
-                    padding: '0.5rem 1rem',
-                    borderRadius: '6px',
-                    fontSize: '0.9rem',
-                    fontWeight: '500',
-                    cursor: 'pointer'
-                  }}>
-                    Sign In
-                  </button>
-                </Link>
-              )}
-            </div>
-          </div>
-        </header>
-
-        {/* Main Content */}
-        <div style={{ display: 'flex', minHeight: 'calc(100vh - 80px)' }}>
+          {/* Main Content */}
+          <div style={{ display: 'flex', minHeight: 'calc(100vh - 80px)' }}>
           {/* Sidebar */}
           <div style={{
             width: '280px',
@@ -309,7 +262,7 @@ export default function HumanizerPage() {
                   {editingProject === project.id ? (
                     <input
                       type="text"
-                      defaultValue={project.name}
+                      defaultValue={project.title}
                       onBlur={(e) => handleRenameProject(project.id, e.target.value)}
                       onKeyPress={(e) => {
                         if (e.key === 'Enter') {
@@ -330,11 +283,11 @@ export default function HumanizerPage() {
                     />
                   ) : (
                     <div style={{ fontWeight: '500', color: '#1f2937', marginBottom: '0.25rem' }}>
-                      {project.name}
+                      {project.title}
                     </div>
                   )}
                   <div style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: '0.5rem' }}>
-                    {project.lastModified}
+                    {project.updated_at ? new Date(project.updated_at).toLocaleDateString() : 'Recently'}
                   </div>
                   <div style={{
                     position: 'absolute',
@@ -392,7 +345,7 @@ export default function HumanizerPage() {
                       zIndex: 10
                     }}>
                       <div style={{ fontSize: '0.8rem', color: '#374151', marginBottom: '0.5rem' }}>
-                        Delete "{project.name}"?
+                        Delete "{project.title}"?
                       </div>
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
                         <button
@@ -545,14 +498,13 @@ export default function HumanizerPage() {
               </div>
 
               {/* Text Area */}
-              <div style={{ position: 'relative', marginBottom: '1rem', display: 'flex', justifyContent: 'center' }}>
+              <div style={{ position: 'relative', marginBottom: '1rem' }}>
                 <textarea
                   value={inputText}
                   onChange={handleTextChange}
                   placeholder="Paste your text here..."
                   style={{
                     width: '100%',
-                    maxWidth: '600px',
                     minHeight: '200px',
                     border: '2px solid #e5e7eb',
                     borderRadius: '8px',
@@ -561,7 +513,8 @@ export default function HumanizerPage() {
                     fontFamily: 'inherit',
                     resize: 'vertical',
                     outline: 'none',
-                    backgroundColor: inputText ? 'white' : '#f9fafb'
+                    backgroundColor: inputText ? 'white' : '#f9fafb',
+                    boxSizing: 'border-box'
                   }}
                 />
                 
@@ -571,7 +524,8 @@ export default function HumanizerPage() {
                     top: '50%',
                     left: '50%',
                     transform: 'translate(-50%, -50%)',
-                    textAlign: 'center'
+                    textAlign: 'center',
+                    width: '100%'
                   }}>
                     <button
                       onClick={handlePasteText}
@@ -724,7 +678,8 @@ export default function HumanizerPage() {
             </div>
           </div>
         </div>
-      </div>
+        </div>
+      </ProtectedRoute>
     </>
   )
 }

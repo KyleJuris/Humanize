@@ -1,4 +1,7 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://humanize-fvj3.onrender.com/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 
+  (process.env.NODE_ENV === 'production' 
+    ? 'https://humanize-pro-backend.onrender.com/api' 
+    : 'http://localhost:5000/api');
 
 class ApiClient {
   constructor() {
@@ -21,22 +24,37 @@ class ApiClient {
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    console.log('API Request:', { url, method: config.method || 'GET', body: config.body });
+    console.log('🚀 API Request:', { 
+      url, 
+      method: config.method || 'GET', 
+      body: config.body 
+    });
 
     try {
       const response = await fetch(url, config);
-      console.log('API Response:', { status: response.status, statusText: response.statusText });
+      console.log('📡 API Response:', { 
+        url,
+        status: response.status, 
+        statusText: response.statusText,
+        ok: response.ok
+      });
       
       const data = await response.json();
-      console.log('API Data:', data);
+      console.log('📄 API Data:', data);
 
       if (!response.ok) {
+        console.error('❌ API Request Failed:', {
+          url,
+          status: response.status,
+          statusText: response.statusText,
+          error: data.error || `Request failed with status ${response.status}`
+        });
         throw new Error(data.error || `Request failed with status ${response.status}`);
       }
 
       return data;
     } catch (error) {
-      console.error('API request failed:', {
+      console.error('💥 API request failed:', {
         url,
         error: error.message,
         stack: error.stack
@@ -91,7 +109,7 @@ class ApiClient {
     return result;
   }
 
-  // Projects methods
+  // Project methods
   async getProjects() {
     return this.request('/projects');
   }
@@ -117,6 +135,13 @@ class ApiClient {
   async deleteProject(id) {
     return this.request(`/projects/${id}`, {
       method: 'DELETE',
+    });
+  }
+
+  async humanizeText(text, options = {}) {
+    return this.request('/projects/humanize', {
+      method: 'POST',
+      body: JSON.stringify({ text, ...options }),
     });
   }
 
