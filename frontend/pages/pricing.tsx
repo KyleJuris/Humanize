@@ -72,7 +72,7 @@ export default function PricingPage() {
                 fontWeight: '500',
                 cursor: 'pointer'
               }}>
-                Log In
+                Sign In
               </button>
               <div style={{
                 width: '32px',

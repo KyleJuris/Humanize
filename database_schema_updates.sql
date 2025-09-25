@@ -5,13 +5,13 @@ DROP TABLE IF EXISTS public.profiles CASCADE;
 CREATE TABLE public.profiles (
   id UUID PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  email TEXT NOT NULL,
-  full_name TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   avatar_url TEXT,
   plan TEXT NOT NULL DEFAULT 'free',
   stripe_customer_id TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  email TEXT NOT NULL,
+  user_name TEXT NOT NULL
 );
 
 ALTER TABLE public.profiles ADD CONSTRAINT profiles_user_id_unique UNIQUE (user_id);
@@ -49,16 +49,14 @@ DROP TABLE IF EXISTS public.projects CASCADE;
 CREATE TABLE public.projects (
   id UUID PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  title TEXT NOT NULL,
-  input_text TEXT NOT NULL DEFAULT '',
-  output_text TEXT NOT NULL DEFAULT '',
+  intensity INT NOT NULL DEFAULT 50,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   language TEXT NOT NULL DEFAULT 'en',
   tone TEXT NOT NULL DEFAULT 'neutral',
-  intensity INT NOT NULL DEFAULT 50,
-  flags JSONB NOT NULL DEFAULT '{"avoidBurstiness": false, "avoidPerplexity": false}',
-  archived BOOLEAN NOT NULL DEFAULT false,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  title TEXT NOT NULL,
+  input_text TEXT NOT NULL DEFAULT '',
+  output_text TEXT NOT NULL DEFAULT ''
 );
 
 CREATE INDEX idx_projects_user_id ON public.projects(user_id);
@@ -107,11 +105,11 @@ SET search_path = public
 AS $$
 BEGIN
   -- Upsert a matching profile row. Use id = user_id = auth.users.id
-  INSERT INTO public.profiles (id, user_id, email, full_name)
-  VALUES (NEW.id, NEW.id, NEW.email, COALESCE((NEW.raw_user_meta_data ->> 'full_name')::text, ''))
+  INSERT INTO public.profiles (id, user_id, email, user_name)
+  VALUES (NEW.id, NEW.id, NEW.email, COALESCE((NEW.raw_user_meta_data ->> 'user_name')::text, ''))
   ON CONFLICT (id) DO UPDATE SET
     email = EXCLUDED.email,
-    full_name = COALESCE(EXCLUDED.full_name, public.profiles.full_name),
+    user_name = COALESCE(EXCLUDED.user_name, public.profiles.user_name),
     updated_at = now();
   RETURN NEW;
 END;

@@ -463,14 +463,16 @@ export default function HumanizerPage() {
               <div style={{
                 display: 'flex',
                 gap: '1.5rem',
-                marginBottom: '1rem',
-                padding: '0.75rem',
-                backgroundColor: '#f9fafb',
-                borderRadius: '6px',
-                border: '1px solid #e5e7eb'
+                marginBottom: '1.5rem',
+                padding: '1rem',
+                backgroundColor: '#f0fdf4',
+                borderRadius: '8px',
+                border: '1px solid #bbf7d0',
+                alignItems: 'center',
+                maxWidth: '500px'
               }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '500', marginBottom: '0.25rem', color: '#374151' }}>
+                <div style={{ width: '120px' }}>
+                  <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: '500', marginBottom: '0.5rem', color: '#374151' }}>
                     Tone
                   </label>
                   <select 
@@ -479,9 +481,9 @@ export default function HumanizerPage() {
                     style={{
                       width: '100%',
                       border: '1px solid #d1d5db',
-                      borderRadius: '4px',
-                      padding: '0.4rem',
-                      fontSize: '0.8rem',
+                      borderRadius: '6px',
+                      padding: '0.5rem',
+                      fontSize: '0.9rem',
                       color: '#374151',
                       backgroundColor: 'white'
                     }}
@@ -493,8 +495,8 @@ export default function HumanizerPage() {
                   </select>
                 </div>
 
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '500', marginBottom: '0.25rem', color: '#374151' }}>
+                <div style={{ flex: 1, minWidth: '200px' }}>
+                  <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: '500', marginBottom: '0.5rem', color: '#374151' }}>
                     Intensity: {intensity}%
                   </label>
                   <input
@@ -505,14 +507,16 @@ export default function HumanizerPage() {
                     onChange={(e) => setIntensity(Number(e.target.value))}
                     style={{
                       width: '100%',
-                      height: '4px',
-                      borderRadius: '2px',
-                      background: '#e5e7eb',
+                      height: '8px',
+                      borderRadius: '4px',
+                      background: `linear-gradient(to right, #10b981 0%, #10b981 ${intensity}%, #e5e7eb ${intensity}%, #e5e7eb 100%)`,
                       outline: 'none',
-                      cursor: 'pointer'
+                      cursor: 'pointer',
+                      WebkitAppearance: 'none',
+                      appearance: 'none'
                     }}
                   />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: '#6b7280', marginTop: '0.2rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#6b7280', marginTop: '0.25rem' }}>
                     <span>Subtle</span>
                     <span>Strong</span>
                   </div>
@@ -528,14 +532,14 @@ export default function HumanizerPage() {
                   style={{
                     width: '100%',
                     minHeight: '200px',
-                    border: '1px solid #e5e7eb',
+                    border: '1px solid #bbf7d0',
                     borderRadius: '8px',
                     padding: '1rem',
                     fontSize: '1rem',
                     fontFamily: 'inherit',
                     resize: 'vertical',
                     outline: 'none',
-                    backgroundColor: inputText ? 'white' : '#f9fafb'
+                    backgroundColor: inputText ? 'white' : '#f0fdf4'
                   }}
                 />
                 

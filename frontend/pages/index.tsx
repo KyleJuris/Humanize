@@ -1,9 +1,10 @@
-import React, { useState } from 'react'
+import React from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
+import { useAuth } from '../contexts/AuthContext'
 
 export default function LandingPage() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false) // This would come from auth context in real app
+  const { user, signOut } = useAuth()
   return (
     <>
       <Head>
@@ -73,10 +74,10 @@ export default function LandingPage() {
 
             {/* User Actions */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              {isLoggedIn ? (
+              {user ? (
                 <>
                   <button 
-                    onClick={() => setIsLoggedIn(false)}
+                    onClick={signOut}
                     style={{
                       backgroundColor: '#ef4444',
                       color: 'white',
@@ -103,7 +104,7 @@ export default function LandingPage() {
                       fontWeight: 'bold',
                       cursor: 'pointer'
                     }}>
-                      K
+                      {user.user_name ? user.user_name.charAt(0).toUpperCase() : 'U'}
                     </div>
                   </Link>
                 </>
@@ -139,14 +140,14 @@ export default function LandingPage() {
               marginBottom: '1rem',
               lineHeight: '1.1'
             }}>
-              Humanize AI Writing in 3 Simple Steps
+              Humanize AI Text, Start Free Today
             </h1>
             <p style={{
               fontSize: '1.25rem',
               color: '#6b7280',
               marginBottom: '3rem'
             }}>
-              Perfect for essays, assignments, blog posts and research papers
+              Bypass detectors instantly, no risk, no payment needed
             </p>
             <Link href="/dashboard/humanizer">
               <button style={{
@@ -182,19 +183,6 @@ export default function LandingPage() {
               border: '1px solid rgba(16, 185, 129, 0.2)',
               position: 'relative'
             }}>
-              <div style={{
-                position: 'absolute',
-                top: '-10px',
-                left: '2rem',
-                backgroundColor: '#10b981',
-                color: 'white',
-                padding: '0.25rem 0.75rem',
-                borderRadius: '4px',
-                fontSize: '0.8rem',
-                fontWeight: '600'
-              }}>
-                STEP 1
-              </div>
               <h3 style={{
                 fontSize: '1.5rem',
                 fontWeight: '600',
@@ -212,44 +200,39 @@ export default function LandingPage() {
                 Experience the power of our advanced AI engine that transforms your text in seconds, not minutes
               </p>
               
-              {/* Mock Input */}
+              {/* Lightning Speed Visual */}
               <div style={{
-                backgroundColor: '#f9fafb',
-                border: '1px solid #e5e7eb',
+                background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+                border: '2px solid #0ea5e9',
                 borderRadius: '8px',
-                padding: '1rem',
-                minHeight: '120px'
+                padding: '1.5rem',
+                minHeight: '120px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexDirection: 'column',
+                textAlign: 'center'
               }}>
                 <div style={{
-                  fontSize: '0.9rem',
-                  fontWeight: '500',
-                  color: '#374151',
+                  fontSize: '3rem',
                   marginBottom: '0.5rem'
                 }}>
-                  Your Text
+                  ⚡
                 </div>
                 <div style={{
-                  color: '#9ca3af',
-                  fontSize: '0.9rem',
-                  marginBottom: '1rem'
+                  fontSize: '1.2rem',
+                  fontWeight: '600',
+                  color: '#0c4a6e',
+                  marginBottom: '0.25rem'
                 }}>
-                  Paste your text here
+                  Instant Processing
                 </div>
-                <button style={{
-                  backgroundColor: '#d1fae5',
-                  color: '#065f46',
-                  border: 'none',
-                  padding: '0.5rem 1rem',
-                  borderRadius: '6px',
+                <div style={{
                   fontSize: '0.9rem',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
+                  color: '#0369a1'
                 }}>
-                  📋 Paste Text
-                </button>
+                  Transform text in seconds
+                </div>
               </div>
             </div>
 
@@ -262,19 +245,6 @@ export default function LandingPage() {
               border: '1px solid rgba(16, 185, 129, 0.2)',
               position: 'relative'
             }}>
-              <div style={{
-                position: 'absolute',
-                top: '-10px',
-                left: '2rem',
-                backgroundColor: '#10b981',
-                color: 'white',
-                padding: '0.25rem 0.75rem',
-                borderRadius: '4px',
-                fontSize: '0.8rem',
-                fontWeight: '600'
-              }}>
-                STEP 2
-              </div>
               <h3 style={{
                 fontSize: '1.5rem',
                 fontWeight: '600',
@@ -292,55 +262,38 @@ export default function LandingPage() {
                 Our cutting-edge technology ensures your content passes every AI detection tool with 99.9% success rate
               </p>
               
-              {/* Mock Result */}
+              {/* Undetectable Visual */}
               <div style={{
-                backgroundColor: '#f9fafb',
-                border: '1px solid #e5e7eb',
+                background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+                border: '2px solid #22c55e',
                 borderRadius: '8px',
-                padding: '1rem',
+                padding: '1.5rem',
+                minHeight: '120px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexDirection: 'column',
                 textAlign: 'center'
               }}>
                 <div style={{
-                  fontSize: '0.9rem',
-                  fontWeight: '500',
-                  color: '#374151',
+                  fontSize: '3rem',
                   marginBottom: '0.5rem'
                 }}>
-                  Result
+                  🛡️
                 </div>
                 <div style={{
-                  fontSize: '2rem',
-                  fontWeight: 'bold',
-                  color: '#1f2937',
+                  fontSize: '1.2rem',
+                  fontWeight: '600',
+                  color: '#15803d',
                   marginBottom: '0.25rem'
                 }}>
-                  50%
+                  99.9% Undetectable
                 </div>
                 <div style={{
                   fontSize: '0.9rem',
-                  color: '#6b7280',
-                  marginBottom: '1rem'
+                  color: '#166534'
                 }}>
-                  HUMAN WRITTEN
-                </div>
-                <div style={{
-                  width: '100%',
-                  height: '8px',
-                  backgroundColor: '#fed7aa',
-                  borderRadius: '4px',
-                  marginBottom: '1rem',
-                  overflow: 'hidden'
-                }}>
-                  <div style={{
-                    width: '50%',
-                    height: '100%',
-                    backgroundColor: '#f97316',
-                    borderRadius: '4px'
-                  }}></div>
-                </div>
-                <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>
-                  <div style={{ marginBottom: '0.25rem' }}>✅ GPTZero ✅ OpenAI ✅ Writer</div>
-                  <div>⚠️ Sapling ⚠️ Grammarly</div>
+                  Bypass all AI detectors
                 </div>
               </div>
             </div>
@@ -354,19 +307,6 @@ export default function LandingPage() {
               border: '1px solid rgba(16, 185, 129, 0.2)',
               position: 'relative'
             }}>
-              <div style={{
-                position: 'absolute',
-                top: '-10px',
-                left: '2rem',
-                backgroundColor: '#10b981',
-                color: 'white',
-                padding: '0.25rem 0.75rem',
-                borderRadius: '4px',
-                fontSize: '0.8rem',
-                fontWeight: '600'
-              }}>
-                STEP 3
-              </div>
               <h3 style={{
                 fontSize: '1.5rem',
                 fontWeight: '600',
@@ -384,47 +324,39 @@ export default function LandingPage() {
                 Get perfectly crafted content that maintains your original meaning while sounding completely natural and professional
               </p>
               
-              {/* Mock Button */}
+              {/* Professional Quality Visual */}
               <div style={{
-                backgroundColor: '#f9fafb',
-                border: '1px solid #e5e7eb',
+                background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+                border: '2px solid #f59e0b',
                 borderRadius: '8px',
-                padding: '1rem',
+                padding: '1.5rem',
+                minHeight: '120px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexDirection: 'column',
                 textAlign: 'center'
               }}>
-                <button style={{
-                  backgroundColor: '#10b981',
-                  color: 'white',
-                  border: 'none',
-                  padding: '0.75rem 2rem',
-                  borderRadius: '8px',
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  margin: '0 auto',
-                  position: 'relative'
+                <div style={{
+                  fontSize: '3rem',
+                  marginBottom: '0.5rem'
                 }}>
-                  ⭐ Humanize
-                  <div style={{
-                    position: 'absolute',
-                    top: '-5px',
-                    right: '-5px',
-                    width: '20px',
-                    height: '20px',
-                    backgroundColor: '#1f2937',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '12px',
-                    color: 'white'
-                  }}>
-                    👆
-                  </div>
-                </button>
+                  ✨
+                </div>
+                <div style={{
+                  fontSize: '1.2rem',
+                  fontWeight: '600',
+                  color: '#92400e',
+                  marginBottom: '0.25rem'
+                }}>
+                  Professional Quality
+                </div>
+                <div style={{
+                  fontSize: '0.9rem',
+                  color: '#a16207'
+                }}>
+                  Natural, human-like output
+                </div>
               </div>
             </div>
           </div>
@@ -454,7 +386,7 @@ export default function LandingPage() {
                 lineHeight: '1.7',
                 marginBottom: '1.5rem'
               }}>
-                Our rewriting engine is trained on over 1.2 million samples of academic writing, essays, and AI-generated text. Using advanced linguistic modeling, we analyze syntax, tone, and word patterns commonly flagged by detection systems.
+                Our advanced AI engine is trained on over 1.2 million samples of academic writing, essays, and AI-generated content. Using cutting-edge linguistic modeling, we analyze syntax patterns, tone variations, and word structures that are commonly flagged by modern detection systems.
               </p>
               <div style={{
                 display: 'flex',
@@ -479,7 +411,7 @@ export default function LandingPage() {
                     fontWeight: 'bold',
                     color: '#10b981'
                   }}>
-                    99%
+                    99.9%
                   </div>
                   <div style={{ color: '#6b7280', fontSize: '0.9rem' }}>
                     Success Rate
@@ -500,50 +432,153 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Right Side - Example Text */}
+            {/* Right Side - AI Detection Visual */}
             <div style={{
               backgroundColor: 'white',
               borderRadius: '12px',
               padding: '2rem',
               boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
               border: '1px solid rgba(16, 185, 129, 0.2)',
-              maxHeight: '400px',
-              overflow: 'hidden'
+              textAlign: 'center'
             }}>
               <h3 style={{
                 fontSize: '1.2rem',
                 fontWeight: '600',
                 color: '#1f2937',
-                marginBottom: '1rem'
+                marginBottom: '1.5rem'
               }}>
-                Example: AI-Generated Text
+                Tested Against All Major AI Detectors
               </h3>
               <div style={{
-                fontSize: '0.95rem',
-                color: '#374151',
-                lineHeight: '1.6',
-                maxHeight: '300px',
-                overflow: 'hidden',
-                position: 'relative'
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: '1rem',
+                marginBottom: '1.5rem'
               }}>
-                <p style={{ marginBottom: '1rem' }}>
-                  The rapid advancement of artificial intelligence (AI) has sparked a transformative shift across numerous domains, raising both unprecedented opportunities and complex ethical challenges. In particular, the integration of AI technologies into educational systems has altered the traditional dynamics of learning, assessment, and intellectual development.
-                </p>
-                <p style={{ marginBottom: '1rem' }}>
-                  While AI-driven tools offer significant benefits—such as personalized learning, automated feedback, and data-driven instruction—they also introduce concerns regarding academic integrity, privacy, and the erosion of critical thinking skills. For instance, the use of AI text generators in student writing has prompted debates about authenticity and originality in academic work.
-                </p>
-                <p>
-                  Educational institutions are now grappling with the challenge of maintaining academic standards while embracing technological innovation. This requires a delicate balance between leveraging AI's potential and preserving the fundamental values of education.
-                </p>
-                <div style={{
-                  position: 'absolute',
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  height: '50px',
-                  background: 'linear-gradient(transparent, white)',
-                  pointerEvents: 'none'
-                }}></div>
+                {['GPTZero', 'Turnitin', 'ZeroGPT', 'Copyleaks', 'QuillBot', 'Grammarly'].map((detector) => (
+                  <div key={detector} style={{
+                    backgroundColor: '#f0f9ff',
+                    border: '1px solid #0ea5e9',
+                    borderRadius: '8px',
+                    padding: '0.75rem',
+                    fontSize: '0.8rem',
+                    fontWeight: '500',
+                    color: '#0c4a6e'
+                  }}>
+                    ✅ {detector}
+                  </div>
+                ))}
+              </div>
+              <div style={{
+                fontSize: '0.9rem',
+                color: '#6b7280'
+              }}>
+                Our system is updated weekly to adapt to new detection methods
+              </div>
+            </div>
+          </div>
+
+          {/* Trusted by Users Section */}
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            padding: '3rem',
+            boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+            border: '1px solid rgba(0,0,0,0.05)',
+            marginBottom: '4rem',
+            textAlign: 'center'
+          }}>
+            <h2 style={{
+              fontSize: '2.5rem',
+              fontWeight: 'bold',
+              color: '#1f2937',
+              marginBottom: '1.5rem'
+            }}>
+              Trusted by 350,000+ Writers Worldwide
+            </h2>
+            <p style={{
+              fontSize: '1.1rem',
+              color: '#374151',
+              lineHeight: '1.7',
+              marginBottom: '2rem',
+              maxWidth: '800px',
+              margin: '0 auto 2rem'
+            }}>
+              Students polish their writing to sound more natural, marketers improve content for better engagement and SEO, and businesses send emails that feel personal — not robotic. Humanizer Pro adapts to each use case, delivering clear, human-sounding text that reads like it was written by you.
+            </p>
+            
+            {/* User Avatars */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: '1rem',
+              marginBottom: '2rem'
+            }}>
+              {['👨‍💻', '👨‍🎨', '👩‍💼', '👨‍🎓', '👩‍🔬'].map((avatar, index) => (
+                <div key={index} style={{
+                  width: '60px',
+                  height: '60px',
+                  backgroundColor: '#f3f4f6',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.5rem',
+                  border: '3px solid #10b981'
+                }}>
+                  {avatar}
+                </div>
+              ))}
+              <div style={{
+                backgroundColor: '#10b981',
+                color: 'white',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '20px',
+                fontSize: '1.1rem',
+                fontWeight: '600',
+                marginLeft: '1rem'
+              }}>
+                350K+ Users
+              </div>
+            </div>
+
+            {/* Use Cases */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+              gap: '2rem',
+              marginTop: '2rem'
+            }}>
+              <div style={{
+                backgroundColor: '#f0f9ff',
+                padding: '1.5rem',
+                borderRadius: '8px',
+                border: '1px solid #e0f2fe'
+              }}>
+                <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>🎓</div>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: '600', color: '#1f2937', marginBottom: '0.5rem' }}>Students</h3>
+                <p style={{ fontSize: '0.9rem', color: '#6b7280' }}>Polish essays and assignments to sound more natural and academic</p>
+              </div>
+              <div style={{
+                backgroundColor: '#f0fdf4',
+                padding: '1.5rem',
+                borderRadius: '8px',
+                border: '1px solid #dcfce7'
+              }}>
+                <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>📈</div>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: '600', color: '#1f2937', marginBottom: '0.5rem' }}>Marketers</h3>
+                <p style={{ fontSize: '0.9rem', color: '#6b7280' }}>Create engaging content that converts and ranks better in search</p>
+              </div>
+              <div style={{
+                backgroundColor: '#fef3c7',
+                padding: '1.5rem',
+                borderRadius: '8px',
+                border: '1px solid #fde68a'
+              }}>
+                <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>💼</div>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: '600', color: '#1f2937', marginBottom: '0.5rem' }}>Businesses</h3>
+                <p style={{ fontSize: '0.9rem', color: '#6b7280' }}>Send emails and communications that feel personal and authentic</p>
               </div>
             </div>
           </div>
