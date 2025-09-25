@@ -21,17 +21,26 @@ class ApiClient {
       config.headers.Authorization = `Bearer ${token}`;
     }
 
+    console.log('API Request:', { url, method: config.method || 'GET', body: config.body });
+
     try {
       const response = await fetch(url, config);
+      console.log('API Response:', { status: response.status, statusText: response.statusText });
+      
       const data = await response.json();
+      console.log('API Data:', data);
 
       if (!response.ok) {
-        throw new Error(data.error || 'Request failed');
+        throw new Error(data.error || `Request failed with status ${response.status}`);
       }
 
       return data;
     } catch (error) {
-      console.error('API request failed:', error);
+      console.error('API request failed:', {
+        url,
+        error: error.message,
+        stack: error.stack
+      });
       throw error;
     }
   }

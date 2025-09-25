@@ -37,18 +37,24 @@ export const AuthProvider = ({ children }) => {
 
   const signUp = async (email) => {
     try {
+      console.log('Attempting signup for:', email);
       const result = await api.signUp(email);
+      console.log('Signup result:', result);
       return result;
     } catch (error) {
+      console.error('Signup error:', error);
       throw error;
     }
   };
 
   const signIn = async (email) => {
     try {
+      console.log('Attempting signin for:', email);
       const result = await api.signIn(email);
+      console.log('Signin result:', result);
       return result;
     } catch (error) {
+      console.error('Signin error:', error);
       throw error;
     }
   };

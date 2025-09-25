@@ -438,16 +438,14 @@ export default function HumanizerPage() {
           </div>
 
           {/* Main Content Area */}
-          <div style={{ flex: 1, padding: '2rem', display: 'flex', justifyContent: 'center' }}>
+          <div style={{ flex: 1, padding: '2rem' }}>
             <div style={{
               backgroundColor: 'white',
               borderRadius: '12px',
               padding: '2rem',
               boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
               border: '2px solid rgba(0,0,0,0.1)',
-              minHeight: '600px',
-              maxWidth: '800px',
-              width: '100%'
+              minHeight: '600px'
             }}>
               {/* Header */}
               <div style={{
@@ -547,13 +545,14 @@ export default function HumanizerPage() {
               </div>
 
               {/* Text Area */}
-              <div style={{ position: 'relative', marginBottom: '1rem' }}>
+              <div style={{ position: 'relative', marginBottom: '1rem', display: 'flex', justifyContent: 'center' }}>
                 <textarea
                   value={inputText}
                   onChange={handleTextChange}
                   placeholder="Paste your text here..."
                   style={{
                     width: '100%',
+                    maxWidth: '600px',
                     minHeight: '200px',
                     border: '2px solid #e5e7eb',
                     borderRadius: '8px',
