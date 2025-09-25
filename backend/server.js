@@ -1,0 +1,88 @@
+﻿const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
+require('dotenv').config();
+
+const app = express();
+const PORT = process.env.PORT || 3001;
+
+console.log(' SERVER STARTING...');
+console.log(' Port:', PORT);
+console.log(' Environment:', process.env.NODE_ENV || 'development');
+
+app.use(helmet());
+app.use(cors());
+app.use(morgan('combined'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Humanize Pro Backend API',
+    status: 'running',
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'healthy' });
+});
+
+app.use('/api', (req, res) => {
+  res.json({ message: 'API endpoints coming soon!' });
+});
+
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Something went wrong!' });
+});
+
+app.use('*', (req, res) => {
+  res.status(404).json({ error: 'Route not found' });
+});
+
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(' Server successfully started on port', PORT);
+  console.log(' Server listening on 0.0.0.0:' + PORT);
+  console.log(' Backend API is ready!');
+});
+
+server.on('error', (err) => {
+  console.error(' Server failed to start:', err);
+  if (err.code === 'EADDRINUSE') {
+    console.error(' Port', PORT, 'is already in use');
+  }
+  process.exit(1);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error(' Uncaught Exception:', err);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error(' Unhandled Rejection:', reason);
+  process.exit(1);
+});
+
+const gracefulShutdown = (signal) => {
+  console.log(' Received', signal, '. Graceful shutdown...');
+  server.close(() => {
+    console.log(' HTTP server closed');
+    process.exit(0);
+  });
+  setTimeout(() => {
+    console.error(' Force shutdown');
+    process.exit(1);
+  }, 10000);
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+setInterval(() => {
+  console.log(' Heartbeat -', new Date().toISOString());
+}, 30000);
+
+module.exports = app;
