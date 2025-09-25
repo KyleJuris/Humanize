@@ -4,6 +4,6 @@
   "installCommand": "cd frontend && npm install --legacy-peer-deps",
   "devCommand": "cd frontend && npm run dev",
   "env": {
-    "NEXT_PUBLIC_API_URL": "https://humanize-pro-backend.onrender.com/api"
+    "NEXT_PUBLIC_API_URL": "https://your-render-app.onrender.com/api"
   }
 }

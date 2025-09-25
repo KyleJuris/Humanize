@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { useAuth } from '../../contexts/AuthContext'
+import { createClient } from '@supabase/supabase-js'
 
 export default function AuthCallback() {
   const router = useRouter()
@@ -12,32 +13,28 @@ export default function AuthCallback() {
   useEffect(() => {
     const handleAuth = async () => {
       try {
-        // Get the token from URL hash or query params
-        const hash = window.location.hash
-        const urlParams = new URLSearchParams(window.location.search)
-        
-        let token = null
-        
-        // Check URL hash first (Supabase typically puts token in hash)
-        if (hash.includes('access_token=')) {
-          const hashParams = new URLSearchParams(hash.substring(1))
-          token = hashParams.get('access_token')
-        }
-        
-        // Check query params as fallback
-        if (!token) {
-          token = urlParams.get('access_token')
-        }
-
-        if (!token) {
-          throw new Error('No authentication token found in URL')
-        }
-
         setStatus('processing')
         setMessage('Completing authentication...')
 
-        // Handle the auth callback
-        const user = await handleAuthCallback(token)
+        // Create Supabase client
+        const supabase = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://lxibkxddlgxufvqceqtn.supabase.co',
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx4aWJreGRkbGd4dWZ2cWNlcXRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyMzgzNjMsImV4cCI6MjA3MzgxNDM2M30.placeholder'
+        )
+
+        // Get the session from Supabase
+        const { data: { session }, error } = await supabase.auth.getSession()
+
+        if (error) {
+          throw new Error(`Session error: ${error.message}`)
+        }
+
+        if (!session) {
+          throw new Error('No active session found')
+        }
+
+        // Handle the auth callback with the session token
+        const user = await handleAuthCallback(session.access_token)
         
         if (user) {
           setStatus('success')

@@ -11,13 +11,13 @@ services:
       - key: PORT
         value: 5000
       - key: SUPABASE_URL
-        value: https://lxibkxddlgxufvqceqtn.supabase.co
+        value: your-supabase-url-here
       - key: SUPABASE_ANON_KEY
-        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx4aWJreGRkbGd4dWZ2cWNlcXRuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1ODIzODM2MywiZXhwIjoyMDczODE0MzYzfQ.QDkoereRoYzUzxHeom2krjTIJj9WELP4v7iCTuihSzE
+        value: your-supabase-anon-key-here
       - key: FRONTEND_URL
-        value: https://humanize-pro.vercel.app
+        value: https://your-vercel-app.vercel.app
       - key: LLM_API_KEY
-        value: placeholder-api-key
+        value: your-llm-api-key-here
       - key: LLM_MODEL
         value: gpt-4o-mini
       - key: LLM_ENDPOINT
