@@ -2,7 +2,15 @@ import React, { useEffect, useState } from 'react'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { useAuth } from '../../contexts/AuthContext'
-import { supabase } from '../../lib/supabase'
+
+// Import Supabase client with error handling
+let supabase
+try {
+  const { supabase: client } = require('../../lib/supabase')
+  supabase = client
+} catch (error) {
+  console.error('Failed to initialize Supabase client:', error)
+}
 
 export default function AuthCallback() {
   const router = useRouter()
@@ -15,6 +23,10 @@ export default function AuthCallback() {
       try {
         setStatus('processing')
         setMessage('Completing authentication...')
+
+        if (!supabase) {
+          throw new Error('Supabase client not initialized. Please check your environment variables.')
+        }
 
         console.log('🔍 Current URL:', window.location.href)
         console.log('🔍 URL Hash:', window.location.hash)

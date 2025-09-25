@@ -1,6 +1,14 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '../lib/api';
-import { supabase } from '../lib/supabase';
+
+// Import Supabase client with error handling
+let supabase
+try {
+  const { supabase: client } = require('../lib/supabase');
+  supabase = client;
+} catch (error) {
+  console.error('Failed to initialize Supabase client:', error);
+}
 
 const AuthContext = createContext();
 
@@ -21,6 +29,12 @@ export const AuthProvider = ({ children }) => {
     checkAuth();
 
     // Listen for auth state changes
+    if (!supabase) {
+      console.error('❌ Cannot set up auth state listener - Supabase client not initialized');
+      setLoading(false);
+      return;
+    }
+    
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('🔄 Auth state changed:', event, session?.user?.email);
@@ -60,6 +74,12 @@ export const AuthProvider = ({ children }) => {
   const checkAuth = async () => {
     try {
       console.log('🔍 Checking authentication...');
+      
+      if (!supabase) {
+        console.error('❌ Supabase client not initialized');
+        setLoading(false);
+        return;
+      }
       
       // First check if we have a Supabase session
       const { data: { session }, error } = await supabase.auth.getSession();
