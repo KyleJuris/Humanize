@@ -4,7 +4,8 @@ const nextConfig = {
     ignoreBuildErrors: true
   },
   eslint: { ignoreDuringBuilds: true },
-  trailingSlash: false
+  trailingSlash: false,
+  output: 'standalone'
 }
 
 module.exports = nextConfig
