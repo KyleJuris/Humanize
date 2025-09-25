@@ -1,8 +1,9 @@
-import React from 'react'
+import React, { useState } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 
 export default function LandingPage() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false) // This would come from auth context in real app
   return (
     <>
       <Head>
@@ -55,8 +56,15 @@ export default function LandingPage() {
               </span>
             </Link>
 
-            {/* Navigation */}
-            <nav style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
+            {/* Centered Navigation */}
+            <nav style={{ 
+              display: 'flex', 
+              gap: '2rem', 
+              alignItems: 'center',
+              position: 'absolute',
+              left: '50%',
+              transform: 'translateX(-50%)'
+            }}>
               <Link href="/dashboard/humanizer" style={{ color: '#374151', textDecoration: 'none', fontSize: '0.95rem' }}>Humanizer</Link>
               <Link href="/blog" style={{ color: '#374151', textDecoration: 'none', fontSize: '0.95rem' }}>Blog</Link>
               <Link href="/contact" style={{ color: '#374151', textDecoration: 'none', fontSize: '0.95rem' }}>Contact</Link>
@@ -65,47 +73,57 @@ export default function LandingPage() {
 
             {/* User Actions */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <Link href="/auth">
-                <button style={{
-                  backgroundColor: '#10b981',
-                  color: 'white',
-                  border: 'none',
-                  padding: '0.5rem 1rem',
-                  borderRadius: '6px',
-                  fontSize: '0.9rem',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  textDecoration: 'none'
-                }}>
-                  Log In
-                </button>
-              </Link>
-              <div style={{
-                width: '32px',
-                height: '32px',
-                backgroundColor: '#f3f4f6',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer'
-              }}>
-                🔄
-              </div>
-              <div style={{
-                width: '32px',
-                height: '32px',
-                backgroundColor: '#8b5cf6',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'white',
-                fontWeight: 'bold',
-                cursor: 'pointer'
-              }}>
-                K
-              </div>
+              {isLoggedIn ? (
+                <>
+                  <button 
+                    onClick={() => setIsLoggedIn(false)}
+                    style={{
+                      backgroundColor: '#ef4444',
+                      color: 'white',
+                      border: 'none',
+                      padding: '0.5rem 1rem',
+                      borderRadius: '6px',
+                      fontSize: '0.9rem',
+                      fontWeight: '500',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Sign Out
+                  </button>
+                  <Link href="/dashboard/profile">
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      backgroundColor: '#8b5cf6',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white',
+                      fontWeight: 'bold',
+                      cursor: 'pointer'
+                    }}>
+                      K
+                    </div>
+                  </Link>
+                </>
+              ) : (
+                <Link href="/auth">
+                  <button style={{
+                    backgroundColor: '#10b981',
+                    color: 'white',
+                    border: 'none',
+                    padding: '0.5rem 1rem',
+                    borderRadius: '6px',
+                    fontSize: '0.9rem',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    textDecoration: 'none'
+                  }}>
+                    Sign In
+                  </button>
+                </Link>
+              )}
             </div>
           </div>
         </header>
@@ -184,14 +202,14 @@ export default function LandingPage() {
                 marginBottom: '1rem',
                 marginTop: '1rem'
               }}>
-                Paste Your Text
+                Lightning Fast Processing
               </h3>
               <p style={{
                 color: '#6b7280',
                 lineHeight: '1.6',
                 marginBottom: '1.5rem'
               }}>
-                Paste any content — homework, assignment, or AI-generated draft
+                Experience the power of our advanced AI engine that transforms your text in seconds, not minutes
               </p>
               
               {/* Mock Input */}
@@ -264,14 +282,14 @@ export default function LandingPage() {
                 marginBottom: '1rem',
                 marginTop: '1rem'
               }}>
-                Check AI Score
+                Undetectable Results
               </h3>
               <p style={{
                 color: '#6b7280',
                 lineHeight: '1.6',
                 marginBottom: '1.5rem'
               }}>
-                See how much of your text is considered human-written
+                Our cutting-edge technology ensures your content passes every AI detection tool with 99.9% success rate
               </p>
               
               {/* Mock Result */}
@@ -356,14 +374,14 @@ export default function LandingPage() {
                 marginBottom: '1rem',
                 marginTop: '1rem'
               }}>
-                Humanize
+                Professional Quality
               </h3>
               <p style={{
                 color: '#6b7280',
                 lineHeight: '1.6',
                 marginBottom: '1.5rem'
               }}>
-                Rewrite your text to sound 100% human-written and pass AI detection
+                Get perfectly crafted content that maintains your original meaning while sounding completely natural and professional
               </p>
               
               {/* Mock Button */}

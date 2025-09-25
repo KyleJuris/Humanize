@@ -1,8 +1,9 @@
-import React from 'react'
+import React, { useState } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 
 export default function ProfilePage() {
+  const [isLoggedIn, setIsLoggedIn] = useState(true) // This would come from auth context in real app
   return (
     <>
       <Head>
@@ -65,23 +66,57 @@ export default function ProfilePage() {
 
             {/* User Actions */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <Link href="/dashboard/profile">
-                <div style={{
-                  width: '32px',
-                  height: '32px',
-                  backgroundColor: '#8b5cf6',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'white',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  border: '2px solid #10b981'
-                }}>
-                  K
-                </div>
-              </Link>
+              {isLoggedIn ? (
+                <>
+                  <button 
+                    onClick={() => setIsLoggedIn(false)}
+                    style={{
+                      backgroundColor: '#ef4444',
+                      color: 'white',
+                      border: 'none',
+                      padding: '0.5rem 1rem',
+                      borderRadius: '6px',
+                      fontSize: '0.9rem',
+                      fontWeight: '500',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Sign Out
+                  </button>
+                  <Link href="/dashboard/profile">
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      backgroundColor: '#8b5cf6',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      border: '2px solid #10b981'
+                    }}>
+                      K
+                    </div>
+                  </Link>
+                </>
+              ) : (
+                <Link href="/auth">
+                  <button style={{
+                    backgroundColor: '#10b981',
+                    color: 'white',
+                    border: 'none',
+                    padding: '0.5rem 1rem',
+                    borderRadius: '6px',
+                    fontSize: '0.9rem',
+                    fontWeight: '500',
+                    cursor: 'pointer'
+                  }}>
+                    Sign In
+                  </button>
+                </Link>
+              )}
             </div>
           </div>
         </header>

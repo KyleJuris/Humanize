@@ -10,6 +10,7 @@ export default function HumanizerPage() {
   const [intensity, setIntensity] = useState(50)
   const [tone, setTone] = useState('neutral')
   const [activeTab, setActiveTab] = useState('output')
+  const [isLoggedIn, setIsLoggedIn] = useState(true) // This would come from auth context in real app
   const [projects, setProjects] = useState([
     { id: 1, name: 'Academic Paper', lastModified: '2 hours ago', category: 'academic' },
     { id: 2, name: 'Marketing Copy', lastModified: '1 day ago', category: 'marketing' },
@@ -160,22 +161,56 @@ export default function HumanizerPage() {
 
             {/* User Actions */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <Link href="/dashboard/profile">
-                <div style={{
-                  width: '32px',
-                  height: '32px',
-                  backgroundColor: '#8b5cf6',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'white',
-                  fontWeight: 'bold',
-                  cursor: 'pointer'
-                }}>
-                  K
-                </div>
-              </Link>
+              {isLoggedIn ? (
+                <>
+                  <button 
+                    onClick={() => setIsLoggedIn(false)}
+                    style={{
+                      backgroundColor: '#ef4444',
+                      color: 'white',
+                      border: 'none',
+                      padding: '0.5rem 1rem',
+                      borderRadius: '6px',
+                      fontSize: '0.9rem',
+                      fontWeight: '500',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Sign Out
+                  </button>
+                  <Link href="/dashboard/profile">
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      backgroundColor: '#8b5cf6',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white',
+                      fontWeight: 'bold',
+                      cursor: 'pointer'
+                    }}>
+                      K
+                    </div>
+                  </Link>
+                </>
+              ) : (
+                <Link href="/auth">
+                  <button style={{
+                    backgroundColor: '#10b981',
+                    color: 'white',
+                    border: 'none',
+                    padding: '0.5rem 1rem',
+                    borderRadius: '6px',
+                    fontSize: '0.9rem',
+                    fontWeight: '500',
+                    cursor: 'pointer'
+                  }}>
+                    Sign In
+                  </button>
+                </Link>
+              )}
             </div>
           </div>
         </header>
@@ -427,15 +462,15 @@ export default function HumanizerPage() {
               {/* Settings */}
               <div style={{
                 display: 'flex',
-                gap: '2rem',
-                marginBottom: '1.5rem',
-                padding: '1rem',
+                gap: '1.5rem',
+                marginBottom: '1rem',
+                padding: '0.75rem',
                 backgroundColor: '#f9fafb',
-                borderRadius: '8px',
+                borderRadius: '6px',
                 border: '1px solid #e5e7eb'
               }}>
                 <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: '500', marginBottom: '0.5rem', color: '#374151' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '500', marginBottom: '0.25rem', color: '#374151' }}>
                     Tone
                   </label>
                   <select 
@@ -444,9 +479,9 @@ export default function HumanizerPage() {
                     style={{
                       width: '100%',
                       border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      padding: '0.5rem',
-                      fontSize: '0.9rem',
+                      borderRadius: '4px',
+                      padding: '0.4rem',
+                      fontSize: '0.8rem',
                       color: '#374151',
                       backgroundColor: 'white'
                     }}
@@ -459,7 +494,7 @@ export default function HumanizerPage() {
                 </div>
 
                 <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: '500', marginBottom: '0.5rem', color: '#374151' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '500', marginBottom: '0.25rem', color: '#374151' }}>
                     Intensity: {intensity}%
                   </label>
                   <input
@@ -470,14 +505,14 @@ export default function HumanizerPage() {
                     onChange={(e) => setIntensity(Number(e.target.value))}
                     style={{
                       width: '100%',
-                      height: '6px',
-                      borderRadius: '3px',
+                      height: '4px',
+                      borderRadius: '2px',
                       background: '#e5e7eb',
                       outline: 'none',
                       cursor: 'pointer'
                     }}
                   />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#6b7280', marginTop: '0.25rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: '#6b7280', marginTop: '0.2rem' }}>
                     <span>Subtle</span>
                     <span>Strong</span>
                   </div>

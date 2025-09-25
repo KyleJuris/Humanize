@@ -130,42 +130,116 @@ export default function BlogPage() {
             gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
             gap: '2rem'
           }}>
-            {[1, 2, 3, 4, 5, 6].map((post) => (
-              <div key={post} style={{
+            {[
+              {
+                id: 1,
+                title: "The Future of AI Content: What You Need to Know",
+                excerpt: "Discover how AI content generation is revolutionizing the way we create and consume digital content. Learn about the latest trends and what they mean for content creators.",
+                image: "🤖",
+                date: "2 days ago",
+                category: "AI Technology"
+              },
+              {
+                id: 2,
+                title: "5 Ways to Make Your Writing Sound More Human",
+                excerpt: "Learn proven techniques to add personality and authenticity to your writing. These simple tips will help your content connect better with readers.",
+                image: "✍️",
+                date: "5 days ago",
+                category: "Writing Tips"
+              },
+              {
+                id: 3,
+                title: "Understanding AI Detection Tools: A Complete Guide",
+                excerpt: "Get an in-depth look at how AI detection tools work and why they're becoming increasingly important in academic and professional settings.",
+                image: "🔍",
+                date: "1 week ago",
+                category: "Technology"
+              },
+              {
+                id: 4,
+                title: "Academic Integrity in the Age of AI",
+                excerpt: "Explore the ethical considerations surrounding AI-generated content in academic environments and how institutions are adapting.",
+                image: "🎓",
+                date: "2 weeks ago",
+                category: "Education"
+              },
+              {
+                id: 5,
+                title: "Content Marketing Strategies That Actually Work",
+                excerpt: "Discover effective content marketing strategies that help businesses connect with their audience and drive meaningful engagement.",
+                image: "📈",
+                date: "3 weeks ago",
+                category: "Marketing"
+              },
+              {
+                id: 6,
+                title: "The Psychology of Human vs AI Writing",
+                excerpt: "Understand the subtle differences between human and AI-generated content and how readers perceive these differences.",
+                image: "🧠",
+                date: "1 month ago",
+                category: "Psychology"
+              }
+            ].map((post) => (
+              <div key={post.id} style={{
                 backgroundColor: 'white',
                 borderRadius: '12px',
                 padding: '2rem',
                 boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                border: '1px solid rgba(0,0,0,0.05)'
-              }}>
+                border: '1px solid rgba(0,0,0,0.05)',
+                transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                cursor: 'pointer'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)'
+                e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)'
+              }}
+              >
                 <div style={{
                   width: '100%',
                   height: '200px',
-                  backgroundColor: '#f3f4f6',
+                  backgroundColor: '#f0f9ff',
                   borderRadius: '8px',
                   marginBottom: '1rem',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: '#6b7280',
-                  fontSize: '1.1rem'
+                  fontSize: '4rem',
+                  border: '2px solid #e0f2fe'
                 }}>
-                  Blog Image {post}
+                  {post.image}
+                </div>
+                <div style={{
+                  backgroundColor: '#10b981',
+                  color: 'white',
+                  padding: '0.25rem 0.75rem',
+                  borderRadius: '12px',
+                  fontSize: '0.8rem',
+                  fontWeight: '500',
+                  display: 'inline-block',
+                  marginBottom: '1rem'
+                }}>
+                  {post.category}
                 </div>
                 <h3 style={{
                   fontSize: '1.25rem',
                   fontWeight: '600',
                   color: '#1f2937',
-                  marginBottom: '0.5rem'
+                  marginBottom: '0.5rem',
+                  lineHeight: '1.3'
                 }}>
-                  Blog Post Title {post}
+                  {post.title}
                 </h3>
                 <p style={{
                   color: '#6b7280',
                   lineHeight: '1.6',
-                  marginBottom: '1rem'
+                  marginBottom: '1rem',
+                  fontSize: '0.95rem'
                 }}>
-                  This is a placeholder for the blog post excerpt. It would contain a brief summary of the article content.
+                  {post.excerpt}
                 </p>
                 <div style={{
                   display: 'flex',
@@ -173,7 +247,7 @@ export default function BlogPage() {
                   alignItems: 'center'
                 }}>
                   <span style={{ color: '#9ca3af', fontSize: '0.9rem' }}>
-                    {post} days ago
+                    {post.date}
                   </span>
                   <button style={{
                     backgroundColor: '#10b981',
@@ -183,8 +257,16 @@ export default function BlogPage() {
                     borderRadius: '6px',
                     fontSize: '0.9rem',
                     fontWeight: '500',
-                    cursor: 'pointer'
-                  }}>
+                    cursor: 'pointer',
+                    transition: 'background-color 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#059669'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#10b981'
+                  }}
+                  >
                     Read More
                   </button>
                 </div>

@@ -138,22 +138,10 @@ export default function PricingPage() {
               padding: '2rem',
               boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
               border: '1px solid rgba(0,0,0,0.05)',
-              position: 'relative'
+              position: 'relative',
+              display: 'flex',
+              flexDirection: 'column'
             }}>
-              <div style={{
-                position: 'absolute',
-                top: '-10px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                backgroundColor: '#10b981',
-                color: 'white',
-                padding: '0.5rem 1rem',
-                borderRadius: '20px',
-                fontSize: '0.9rem',
-                fontWeight: '500'
-              }}>
-                Most Popular
-              </div>
               
               <h3 style={{
                 fontSize: '1.5rem',
@@ -200,7 +188,8 @@ export default function PricingPage() {
                 borderRadius: '8px',
                 fontSize: '1rem',
                 fontWeight: '600',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                marginTop: 'auto'
               }}>
                 Get Started Free
               </button>
@@ -213,7 +202,9 @@ export default function PricingPage() {
               padding: '2rem',
               boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
               border: '1px solid rgba(0,0,0,0.05)',
-              position: 'relative'
+              position: 'relative',
+              display: 'flex',
+              flexDirection: 'column'
             }}>
               <h3 style={{
                 fontSize: '1.5rem',
@@ -263,7 +254,8 @@ export default function PricingPage() {
                 borderRadius: '8px',
                 fontSize: '1rem',
                 fontWeight: '600',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                marginTop: 'auto'
               }}>
                 Choose Pro
               </button>
@@ -276,7 +268,9 @@ export default function PricingPage() {
               padding: '2rem',
               boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
               border: '1px solid rgba(0,0,0,0.05)',
-              position: 'relative'
+              position: 'relative',
+              display: 'flex',
+              flexDirection: 'column'
             }}>
               <h3 style={{
                 fontSize: '1.5rem',
@@ -326,7 +320,8 @@ export default function PricingPage() {
                 borderRadius: '8px',
                 fontSize: '1rem',
                 fontWeight: '600',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                marginTop: 'auto'
               }}>
                 Contact Sales
               </button>
