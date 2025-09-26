@@ -131,7 +131,8 @@ export default function PricingPage() {
             justifyContent: 'center',
             alignItems: 'center',
             gap: '1rem',
-            marginBottom: '3rem'
+            marginBottom: '3rem',
+            position: 'relative'
           }}>
             <span style={{
               color: billingCycle === 'monthly' ? '#1f2937' : '#6b7280',
@@ -149,7 +150,8 @@ export default function PricingPage() {
                 borderRadius: '15px',
                 position: 'relative',
                 cursor: 'pointer',
-                transition: 'background-color 0.3s'
+                transition: 'background-color 0.3s',
+                flexShrink: 0
               }}
             >
               <div style={{
@@ -170,18 +172,21 @@ export default function PricingPage() {
             }}>
               Annual
             </span>
-            {billingCycle === 'annual' && (
-              <span style={{
-                backgroundColor: '#10b981',
-                color: 'white',
-                padding: '0.25rem 0.5rem',
-                borderRadius: '4px',
-                fontSize: '0.8rem',
-                fontWeight: '600'
-              }}>
-                SAVE 50%
-              </span>
-            )}
+            <span style={{
+              backgroundColor: '#10b981',
+              color: 'white',
+              padding: '0.25rem 0.5rem',
+              borderRadius: '4px',
+              fontSize: '0.8rem',
+              fontWeight: '600',
+              position: 'absolute',
+              right: '-80px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              whiteSpace: 'nowrap'
+            }}>
+              SAVE 50%
+            </span>
           </div>
 
           {/* Pricing Cards */}
@@ -263,23 +268,20 @@ export default function PricingPage() {
                 ))}
               </ul>
               
-              <button 
-                onClick={() => handleSubscribe('pro')}
-                style={{
-                  width: '100%',
-                  backgroundColor: '#10b981',
-                  color: 'white',
-                  border: 'none',
-                  padding: '0.75rem 1.5rem',
-                  borderRadius: '8px',
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  marginTop: 'auto'
-                }}
-              >
-                Subscribe
-              </button>
+              <div style={{
+                width: '100%',
+                backgroundColor: '#f3f4f6',
+                color: '#6b7280',
+                border: '1px solid #d1d5db',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '8px',
+                fontSize: '1rem',
+                fontWeight: '600',
+                textAlign: 'center',
+                marginTop: 'auto'
+              }}>
+                Free
+              </div>
             </div>
 
             {/* Pro Plan */}
