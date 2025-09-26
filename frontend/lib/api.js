@@ -167,31 +167,31 @@ class ApiClient {
     });
   }
 
-  // Stripe subscription methods - using Next.js App Router API routes
+  // Stripe subscription methods - all handled by backend for security
   async createCheckoutSession(priceId) {
-    return this.requestWithBaseUrl(STRIPE_API_BASE_URL, '/stripe/create-checkout-session', {
+    return this.request('/stripe/create-checkout-session', {
       method: 'POST',
       body: JSON.stringify({ priceId }),
     });
   }
 
   async createHostedCheckoutSession(priceId, customerEmail) {
-    return this.requestWithBaseUrl(STRIPE_API_BASE_URL, '/stripe-hosted/create-checkout-session', {
+    return this.request('/stripe-hosted/create-checkout-session', {
       method: 'POST',
       body: JSON.stringify({ priceId, customerEmail }),
     });
   }
 
   async getSessionStatus(sessionId) {
-    return this.requestWithBaseUrl(STRIPE_API_BASE_URL, `/stripe/session-status?session_id=${sessionId}`);
+    return this.request(`/stripe/session-status?session_id=${sessionId}`);
   }
 
   async getSubscriptionStatus() {
-    return this.requestWithBaseUrl(STRIPE_API_BASE_URL, '/stripe/subscription-status');
+    return this.request('/stripe/subscription-status');
   }
 
   async cancelSubscription() {
-    return this.requestWithBaseUrl(STRIPE_API_BASE_URL, '/stripe/cancel-subscription', {
+    return this.request('/stripe/cancel-subscription', {
       method: 'POST',
     });
   }
