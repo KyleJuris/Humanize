@@ -3,6 +3,9 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ||
     ? 'https://humanize-fvj3.onrender.com/api' 
     : 'http://localhost:5000/api');
 
+// For Stripe operations, use Next.js API routes
+const STRIPE_API_BASE_URL = '/api';
+
 class ApiClient {
   constructor() {
     this.baseURL = API_BASE_URL;
@@ -164,33 +167,89 @@ class ApiClient {
     });
   }
 
-  // Stripe subscription methods
+  // Stripe subscription methods - using Next.js API routes
   async createCheckoutSession(priceId) {
-    return this.request('/stripe/create-checkout-session', {
+    return this.requestWithBaseUrl(STRIPE_API_BASE_URL, '/stripe/create-checkout-session', {
       method: 'POST',
       body: JSON.stringify({ priceId }),
     });
   }
 
   async createHostedCheckoutSession(priceId, customerEmail) {
-    return this.request('/stripe-hosted/create-checkout-session', {
+    return this.requestWithBaseUrl(STRIPE_API_BASE_URL, '/stripe-hosted/create-checkout-session', {
       method: 'POST',
       body: JSON.stringify({ priceId, customerEmail }),
     });
   }
 
   async getSessionStatus(sessionId) {
-    return this.request(`/stripe/session-status?session_id=${sessionId}`);
+    return this.requestWithBaseUrl(STRIPE_API_BASE_URL, `/stripe/session-status?session_id=${sessionId}`);
   }
 
   async getSubscriptionStatus() {
-    return this.request('/stripe/subscription-status');
+    return this.requestWithBaseUrl(STRIPE_API_BASE_URL, '/stripe/subscription-status');
   }
 
   async cancelSubscription() {
-    return this.request('/stripe/cancel-subscription', {
+    return this.requestWithBaseUrl(STRIPE_API_BASE_URL, '/stripe/cancel-subscription', {
       method: 'POST',
     });
+  }
+
+  // Helper method for requests with different base URLs
+  async requestWithBaseUrl(baseUrl, endpoint, options = {}) {
+    const url = `${baseUrl}${endpoint}`;
+    const config = {
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+      ...options,
+    };
+
+    // Add auth token if available
+    const token = this.getToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    console.log('🚀 Stripe API Request:', { 
+      url, 
+      method: config.method || 'GET', 
+      body: config.body 
+    });
+
+    try {
+      const response = await fetch(url, config);
+      console.log('📡 Stripe API Response:', { 
+        url,
+        status: response.status, 
+        statusText: response.statusText,
+        ok: response.ok
+      });
+      
+      const data = await response.json();
+      console.log('📄 Stripe API Data:', data);
+
+      if (!response.ok) {
+        console.error('❌ Stripe API Request Failed:', {
+          url,
+          status: response.status,
+          statusText: response.statusText,
+          error: data.error || `Request failed with status ${response.status}`
+        });
+        throw new Error(data.error || `Request failed with status ${response.status}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('💥 Stripe API request failed:', {
+        url,
+        error: error.message,
+        stack: error.stack
+      });
+      throw error;
+    }
   }
 }
 
