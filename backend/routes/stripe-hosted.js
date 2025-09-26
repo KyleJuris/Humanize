@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const { getStripe } = require('../lib/stripe');
-const { supabaseAnon } = require('../config/database');
 
 // Middleware to authenticate user
 const authenticateUser = async (req, res, next) => {
@@ -12,6 +11,8 @@ const authenticateUser = async (req, res, next) => {
       return res.status(401).json({ error: 'No token provided' });
     }
 
+    // Load database config inside the middleware
+    const { supabaseAnon } = require('../config/database');
     const { data: { user }, error } = await supabaseAnon.auth.getUser(token);
 
     if (error) {
