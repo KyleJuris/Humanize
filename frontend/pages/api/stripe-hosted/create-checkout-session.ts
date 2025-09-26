@@ -44,16 +44,22 @@ const authenticateUser = async (req: NextApiRequest) => {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  console.log('Stripe hosted checkout API called:', {
-    method: req.method,
-    headers: req.headers,
-    body: req.body
-  })
+  console.log('=== STRIPE HOSTED CHECKOUT API CALLED ===')
+  console.log('Method:', req.method)
+  console.log('URL:', req.url)
+  console.log('Headers:', req.headers)
+  console.log('Body:', req.body)
 
   if (req.method !== 'POST') {
-    console.log('Method not allowed:', req.method)
-    return res.status(405).json({ error: 'Method not allowed' })
+    console.log('❌ Method not allowed:', req.method)
+    return res.status(405).json({ 
+      error: 'Method not allowed',
+      receivedMethod: req.method,
+      expectedMethod: 'POST'
+    })
   }
+
+  console.log('✅ Method is POST, proceeding...')
 
   try {
     // Check environment variables
