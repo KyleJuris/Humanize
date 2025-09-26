@@ -15,12 +15,6 @@ export default function AuthPage() {
   // Compute title as a single string to avoid Next.js warning
   const pageTitle = `${isLogin ? 'Sign In' : 'Sign Up'} - Humanizer Pro`
 
-  // Log client instance to confirm it's the singleton
-  const supabaseClient = getSupabase()
-  console.log('🔍 Auth Page - Supabase Client Instance:', supabaseClient)
-  console.log('🔍 Auth Page - Client URL:', supabaseClient.supabaseUrl)
-  console.log('🔍 Auth Page - Client Key Length:', supabaseClient.supabaseKey?.length)
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
