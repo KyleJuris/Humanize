@@ -73,6 +73,17 @@ function validateEnvironment(secretKey) {
   }
 }
 
+// Handle GET requests to create-checkout-session (should be POST)
+router.get('/create-checkout-session', (req, res) => {
+  res.status(405).json({
+    error: 'Method Not Allowed',
+    message: 'This endpoint only accepts POST requests. Use POST method to create a checkout session.',
+    method: req.method,
+    allowedMethods: ['POST'],
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Create hosted checkout session
 router.post('/create-checkout-session', authenticateUser, async (req, res) => {
   try {
