@@ -1,5 +1,5 @@
 const express = require('express');
-const supabase = require('../config/database');
+const { supabase, supabaseAnon } = require('../config/database');
 const router = express.Router();
 
 // Sign up with email
@@ -20,8 +20,8 @@ router.post('/signup', async (req, res) => {
       });
     }
 
-    // Send magic link for signup
-    const { data, error } = await supabase.auth.signInWithOtp({
+    // Send magic link for signup using anon client
+    const { data, error } = await supabaseAnon.auth.signInWithOtp({
       email,
       options: {
         emailRedirectTo: `${process.env.FRONTEND_URL || 'https://humanize-pro.vercel.app'}/auth/callback`
@@ -62,8 +62,8 @@ router.post('/signin', async (req, res) => {
       });
     }
 
-    // Send magic link for signin
-    const { data, error } = await supabase.auth.signInWithOtp({
+    // Send magic link for signin using anon client
+    const { data, error } = await supabaseAnon.auth.signInWithOtp({
       email,
       options: {
         emailRedirectTo: `${process.env.FRONTEND_URL || 'https://humanize-pro.vercel.app'}/auth/callback`
@@ -95,13 +95,19 @@ router.get('/me', async (req, res) => {
       return res.status(401).json({ error: 'No token provided' });
     }
 
-    const { data: { user }, error } = await supabase.auth.getUser(token);
+    console.log('🔍 Validating token with Supabase...');
+    
+    // Use the anon client to validate the token (since it was issued by the anon client)
+    const { data: { user }, error } = await supabaseAnon.auth.getUser(token);
 
     if (error) {
+      console.error('❌ Token validation failed:', error);
       return res.status(401).json({ error: 'Invalid token' });
     }
 
-    // Get user profile
+    console.log('✅ Token validated for user:', user.email);
+
+    // Get user profile using the service role client (for admin access)
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('*')
@@ -128,7 +134,7 @@ router.get('/me', async (req, res) => {
 // Sign out
 router.post('/signout', async (req, res) => {
   try {
-    const { error } = await supabase.auth.signOut();
+    const { error } = await supabaseAnon.auth.signOut();
     
     if (error) {
       return res.status(400).json({ error: error.message });

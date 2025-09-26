@@ -3,6 +3,7 @@ import Head from 'next/head'
 import Link from 'next/link'
 import Header from '../components/Header'
 import { useAuth } from '../contexts/AuthContext'
+import { getSupabase } from '../lib/supabaseClient'
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true)
@@ -10,6 +11,15 @@ export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState('')
   const { signUp, signIn } = useAuth()
+
+  // Compute title as a single string to avoid Next.js warning
+  const pageTitle = `${isLogin ? 'Sign In' : 'Sign Up'} - Humanizer Pro`
+
+  // Log client instance to confirm it's the singleton
+  const supabaseClient = getSupabase()
+  console.log('🔍 Auth Page - Supabase Client Instance:', supabaseClient)
+  console.log('🔍 Auth Page - Client URL:', supabaseClient.supabaseUrl)
+  console.log('🔍 Auth Page - Client Key Length:', supabaseClient.supabaseKey?.length)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -34,7 +44,7 @@ export default function AuthPage() {
   return (
     <>
       <Head>
-        <title>{isLogin ? 'Sign In' : 'Sign Up'} - Humanizer Pro</title>
+        <title>{pageTitle}</title>
         <meta name="description" content="Access your Humanizer Pro account" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />

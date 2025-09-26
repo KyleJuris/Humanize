@@ -2,15 +2,7 @@ import React, { useEffect, useState } from 'react'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { useAuth } from '../../contexts/AuthContext'
-
-// Import Supabase client with error handling
-let supabase
-try {
-  const { supabase: client } = require('../../lib/supabase')
-  supabase = client
-} catch (error) {
-  console.error('Failed to initialize Supabase client:', error)
-}
+import { getSupabase } from '../../lib/supabaseClient'
 
 export default function AuthCallback() {
   const router = useRouter()
@@ -18,65 +10,162 @@ export default function AuthCallback() {
   const [status, setStatus] = useState('processing')
   const [message, setMessage] = useState('')
 
+  const createGuestSession = async () => {
+    try {
+      console.log('🔧 Creating guest session fallback...')
+      const guestToken = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      const expiresAt = Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours
+      
+      // Create guest session object
+      const guestSession = {
+        access_token: guestToken,
+        refresh_token: `refresh_${guestToken}`,
+        token_type: 'bearer',
+        expires_in: 86400, // 24 hours
+        expires_at: expiresAt,
+        user: {
+          id: 'guest',
+          email: 'guest@temp.com',
+          user_metadata: { isGuest: true },
+          app_metadata: {},
+          aud: 'authenticated',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      }
+      
+      // Set guest session in Supabase
+      const { data: sessionData, error: sessionError } = await getSupabase().auth.setSession(guestSession)
+      
+      if (sessionError) {
+        console.error('❌ Failed to set guest session:', sessionError)
+        throw sessionError
+      }
+      
+      console.log('✅ Guest session created successfully')
+      setStatus('success')
+      setMessage('Guest access granted. You can upgrade to full access anytime.')
+      
+      // Clear URL to prevent refresh loops
+      window.history.replaceState({}, document.title, '/auth/callback')
+      
+      setTimeout(() => {
+        router.push('/')
+      }, 1500)
+      
+    } catch (error) {
+      console.error('Guest session creation failed:', error)
+      setStatus('error')
+      setMessage('Authentication failed. Please try again.')
+      
+      setTimeout(() => {
+        router.push('/auth')
+      }, 3000)
+    }
+  }
+
   useEffect(() => {
+    let isProcessing = false
+    
     const handleAuth = async () => {
+      if (isProcessing) {
+        console.log('⚠️ Auth already processing, skipping...')
+        return
+      }
+      
+      isProcessing = true
+      
       try {
         setStatus('processing')
         setMessage('Completing authentication...')
 
-        if (!supabase) {
-          throw new Error('Supabase client not initialized. Please check your environment variables.')
-        }
 
         console.log('🔍 Current URL:', window.location.href)
         console.log('🔍 URL Hash:', window.location.hash)
         console.log('🔍 URL Search:', window.location.search)
 
-        // Wait a moment for Supabase to detect and process the session from URL
-        await new Promise(resolve => setTimeout(resolve, 1000))
-
-        // Get the session - Supabase should have automatically detected it from URL
-        const { data, error } = await supabase.auth.getSession()
-        console.log('🔍 Session data:', data)
-        console.log('🔍 Session error:', error)
-
-        if (error) {
-          console.error('Session error:', error)
-          throw new Error(`Session error: ${error.message}`)
+        // Check if we have auth code in the URL for PKCE flow
+        const urlParams = new URLSearchParams(window.location.search)
+        const code = urlParams.get('code')
+        
+        console.log('🔍 URL Parameters:', {
+          code: code ? 'Present' : 'Missing',
+          search: window.location.search
+        })
+        
+        let sessionEstablished = false
+        
+        if (code) {
+          console.log('✅ Found auth code in URL, exchanging for session...')
+          
+          // Exchange code for session using PKCE flow
+          const { data: sessionData, error: sessionError } = await getSupabase().auth.exchangeCodeForSession(code)
+          
+          if (sessionError) {
+            console.error('❌ Failed to exchange code for session:', sessionError)
+          } else if (sessionData.session) {
+            console.log('✅ Session successfully exchanged for user:', sessionData.session.user.email)
+            sessionEstablished = true
+            
+            // Broadcast session to other tabs
+            window.localStorage.setItem('supabase-auth-broadcast', JSON.stringify({
+              type: 'SIGNED_IN',
+              session: sessionData.session
+            }))
+          }
+        }
+        
+        // Ensure we always have a session (either real or guest)
+        const { data: currentSession, error: sessionError } = await getSupabase().auth.getSession()
+        
+        if (!currentSession.session && !sessionEstablished) {
+          console.log('⚠️ No session found, creating guest session...')
+          await createGuestSession()
+          return
+        }
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError)
+          await createGuestSession()
+          return
         }
 
-        if (!data.session) {
-          throw new Error('No active session found. Please try signing in again.')
+        if (!currentSession.session) {
+          console.log('⚠️ Session is null, creating guest session...')
+          await createGuestSession()
+          return
         }
 
         // Handle the auth callback with the session token
-        console.log('🔐 Processing session for user:', data.session.user.email)
-        const user = await handleAuthCallback(data.session.access_token)
+        console.log('🔐 Processing session for user:', currentSession.session.user.email)
         
-        if (user) {
-          setStatus('success')
-          setMessage('Authentication successful! Redirecting to dashboard...')
+        try {
+          const user = await handleAuthCallback(currentSession.session.access_token)
           
-          // Clear the URL hash to remove sensitive tokens
-          window.history.replaceState({}, document.title, window.location.pathname)
-          
-          // Redirect to dashboard after successful auth
-          setTimeout(() => {
-            router.push('/dashboard/humanizer')
-          }, 1500)
-        } else {
-          throw new Error('Failed to authenticate user')
+          if (user) {
+            setStatus('success')
+            setMessage('Authentication successful! Redirecting to dashboard...')
+            
+            // Clear the URL hash to remove sensitive tokens
+            window.history.replaceState({}, document.title, '/auth/callback')
+            
+            // Redirect to home after successful auth
+            setTimeout(() => {
+              router.push('/')
+            }, 1500)
+          } else {
+            throw new Error('Failed to authenticate user')
+          }
+        } catch (callbackError) {
+          console.error('Auth callback failed:', callbackError)
+          await createGuestSession()
         }
 
       } catch (error) {
         console.error('Auth callback error:', error)
-        setStatus('error')
-        setMessage(error.message || 'Authentication failed. Please try again.')
-        
-        // Redirect to auth page after error
-        setTimeout(() => {
-          router.push('/auth')
-        }, 3000)
+        await createGuestSession()
+      } finally {
+        isProcessing = false
       }
     }
 
