@@ -1,17 +1,14 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import Stripe from 'stripe'
 
-// Initialize Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16',
-})
-
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Set Content-Type header
+  // Set Content-Type header first
   res.setHeader('Content-Type', 'application/json')
 
   console.log('=== STRIPE HOSTED CHECKOUT API CALLED (PAGES ROUTER) ===')
   console.log('Method:', req.method)
+  console.log('URL:', req.url)
+  console.log('Headers:', req.headers)
   console.log('Body:', req.body)
 
   // Handle CORS preflight request
@@ -22,17 +19,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(200).json({ message: 'CORS preflight' })
   }
 
-  // Only allow POST method
+  // Only allow POST method - return 405 for any other method
   if (req.method !== 'POST') {
     console.log('❌ Method not allowed:', req.method)
     return res.status(405).json({ 
       error: 'Method not allowed',
       receivedMethod: req.method,
-      expectedMethod: 'POST'
+      expectedMethod: 'POST',
+      allowedMethods: ['POST', 'OPTIONS']
     })
   }
 
   try {
+    // Check if Stripe is configured before initializing
+    if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.includes('your-stripe-secret-key')) {
+      console.error('STRIPE_SECRET_KEY is not properly configured')
+      return res.status(500).json({ 
+        error: 'Stripe configuration error. Please contact support.' 
+      })
+    }
+
+    // Initialize Stripe only when needed
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+      apiVersion: '2023-10-16',
+    })
+
     const { priceId, success_url, cancel_url } = req.body
     
     // Validate required fields
@@ -40,14 +51,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.error('Missing priceId in request body')
       return res.status(400).json({ 
         error: 'priceId is required' 
-      })
-    }
-    
-    // Check if Stripe is configured
-    if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.includes('your-stripe-secret-key')) {
-      console.error('STRIPE_SECRET_KEY is not properly configured')
-      return res.status(500).json({ 
-        error: 'Stripe configuration error. Please contact support.' 
       })
     }
     
@@ -78,12 +81,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } catch (error) {
     console.error('Error creating Stripe checkout session:', error)
     
-    // Always return valid JSON
+    // Always return valid JSON with proper error handling
     const errorMessage = error instanceof Error ? error.message : 'Internal server error'
     
-    return res.status(500).json({ 
-      error: errorMessage,
-      details: process.env.NODE_ENV === 'development' ? error : undefined
-    })
+    // Ensure we always return JSON, even if there was an error
+    try {
+      return res.status(500).json({ 
+        error: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? error : undefined
+      })
+    } catch (jsonError) {
+      // Fallback if JSON serialization fails
+      console.error('Failed to serialize error response:', jsonError)
+      res.status(500).end(JSON.stringify({ 
+        error: 'Internal server error',
+        message: 'Failed to serialize error response'
+      }))
+    }
   }
 }
