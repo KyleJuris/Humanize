@@ -8,7 +8,8 @@ export default function AuthCallback() {
   const router = useRouter()
   const { handleAuthCallback } = useAuth()
   const [status, setStatus] = useState('processing')
-  const [message, setMessage] = useState('')
+  const [message, setMessage] = useState('Processing authentication...')
+  const [isComplete, setIsComplete] = useState(false)
 
   const createGuestSession = async () => {
     try {
@@ -45,18 +46,20 @@ export default function AuthCallback() {
       console.log('✅ Guest session created successfully')
       setStatus('success')
       setMessage('Guest access granted. You can upgrade to full access anytime.')
+      setIsComplete(true)
       
       // Clear URL to prevent refresh loops
       window.history.replaceState({}, document.title, '/auth/callback')
       
       setTimeout(() => {
         router.push('/')
-      }, 1500)
+      }, 2000)
       
     } catch (error) {
       console.error('Guest session creation failed:', error)
       setStatus('error')
       setMessage('Authentication failed. Please try again.')
+      setIsComplete(true)
       
       setTimeout(() => {
         router.push('/auth')
@@ -66,6 +69,7 @@ export default function AuthCallback() {
 
   useEffect(() => {
     let isProcessing = false
+    let timeoutId = null
     
     const handleAuth = async () => {
       if (isProcessing) {
@@ -77,8 +81,15 @@ export default function AuthCallback() {
       
       try {
         setStatus('processing')
-        setMessage('Completing authentication...')
+        setMessage('Verifying your authentication...')
 
+        // Set a timeout to prevent infinite processing
+        timeoutId = setTimeout(() => {
+          if (!isComplete) {
+            console.log('⏰ Authentication timeout, creating guest session...')
+            createGuestSession()
+          }
+        }, 10000) // 10 second timeout
 
         console.log('🔍 Current URL:', window.location.href)
         console.log('🔍 URL Hash:', window.location.hash)
@@ -145,6 +156,7 @@ export default function AuthCallback() {
           if (user) {
             setStatus('success')
             setMessage('Authentication successful! Redirecting to dashboard...')
+            setIsComplete(true)
             
             // Clear the URL hash to remove sensitive tokens
             window.history.replaceState({}, document.title, '/auth/callback')
@@ -152,13 +164,29 @@ export default function AuthCallback() {
             // Redirect to home after successful auth
             setTimeout(() => {
               router.push('/')
-            }, 1500)
+            }, 2000)
           } else {
             throw new Error('Failed to authenticate user')
           }
         } catch (callbackError) {
           console.error('Auth callback failed:', callbackError)
-          await createGuestSession()
+          // Only fall back to guest session if this is a real authentication failure
+          // Don't show error immediately, try to get user from session first
+          if (currentSession.session && currentSession.session.user) {
+            console.log('🔄 Falling back to session user data')
+            setStatus('success')
+            setMessage('Authentication successful! Redirecting to dashboard...')
+            setIsComplete(true)
+            
+            // Clear the URL hash to remove sensitive tokens
+            window.history.replaceState({}, document.title, '/auth/callback')
+            
+            setTimeout(() => {
+              router.push('/')
+            }, 2000)
+          } else {
+            await createGuestSession()
+          }
         }
 
       } catch (error) {
@@ -166,10 +194,20 @@ export default function AuthCallback() {
         await createGuestSession()
       } finally {
         isProcessing = false
+        if (timeoutId) {
+          clearTimeout(timeoutId)
+        }
       }
     }
 
     handleAuth()
+    
+    // Cleanup timeout on unmount
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
+    }
   }, [handleAuthCallback, router])
 
   return (
@@ -234,7 +272,7 @@ export default function AuthCallback() {
             {message}
           </p>
 
-          {status === 'processing' && (
+          {status === 'processing' && !isComplete && (
             <div style={{
               width: '40px',
               height: '40px',
