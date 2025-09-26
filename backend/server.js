@@ -25,6 +25,27 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(morgan('combined'));
+// Load and mount stripe-hosted routes BEFORE express.json() middleware
+// This ensures the webhook route can use express.raw() for proper Stripe signature verification
+console.log(' Loading stripe-hosted routes for early mounting...');
+let stripeHostedRoutes = null;
+try {
+  stripeHostedRoutes = require('./routes/stripe-hosted');
+  console.log(' Stripe-hosted routes loaded for early mounting');
+} catch (error) {
+  console.error(' Failed to load stripe-hosted routes:', error.message);
+  console.error(' Continuing without stripe-hosted routes');
+}
+
+// Mount stripe-hosted routes BEFORE express.json() middleware
+if (stripeHostedRoutes) {
+  app.use('/api/stripe-hosted', stripeHostedRoutes);
+  console.log(' Stripe-hosted routes mounted at /api/stripe-hosted (before express.json)');
+} else {
+  console.log(' Skipping stripe-hosted routes mounting');
+}
+
+// Now apply express.json() middleware for all other routes
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
