@@ -169,29 +169,29 @@ class ApiClient {
 
   // Stripe subscription methods - all handled by backend for security
   async createCheckoutSession(priceId) {
-    return this.request('/stripe/create-checkout-session', {
+    return this.request('/api/stripe/checkout-session', {
       method: 'POST',
       body: JSON.stringify({ priceId }),
     });
   }
 
   async createHostedCheckoutSession(priceId, customerEmail) {
-    return this.request('/stripe/checkout-session', {
+    return this.request('/api/stripe-hosted/create-checkout-session', {
       method: 'POST',
-      body: JSON.stringify({ priceId }),
+      body: JSON.stringify({ priceId, customerEmail }),
     });
   }
 
   async getSessionStatus(sessionId) {
-    return this.request(`/stripe/session-status?session_id=${sessionId}`);
+    return this.request(`/api/stripe/session-status?session_id=${sessionId}`);
   }
 
   async getSubscriptionStatus() {
-    return this.request('/stripe/subscription-status');
+    return this.request('/api/stripe/subscription-status');
   }
 
   async cancelSubscription() {
-    return this.request('/stripe/cancel-subscription', {
+    return this.request('/api/stripe/cancel-subscription', {
       method: 'POST',
     });
   }
