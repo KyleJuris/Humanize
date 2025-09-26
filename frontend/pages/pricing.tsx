@@ -423,7 +423,7 @@ export default function PricingPage() {
               </ul>
               
               <SubscribeButton
-                priceId="price_1SAkpqIxRGF259ZEZoW96l7pPo5NkDfG2OiKCSYV0ieCIlObHJgVNnOg93EmPkYH4HzOm0M5q8Q8eEgVSO74gxkC00Hw38Q2yy"
+                priceId="price_1SBQPvIxRGF259ZE76mXrkA4"
                 planName="Pro"
                 style={{
                   width: '100%',
@@ -515,7 +515,7 @@ export default function PricingPage() {
               </ul>
               
               <SubscribeButton
-                priceId="price_1SAkpqIxRGF259ZEZoW96l7pPo5NkDfG2OiKCSYV0ieCIlObHJgVNnOg93EmPkYH4HzOm0M5q8Q8eEgVSO74gxkC00Hw38Q2yy"
+                priceId="price_1SBQOpIxRGF259ZEXgH7kuYV"
                 planName="Ultra"
                 style={{
                   width: '100%',

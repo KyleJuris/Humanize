@@ -18,8 +18,8 @@ const stripePromise = loadStripe(stripePublishableKey!);
 
 // Stripe price IDs
 const PRICE_IDS = {
-  pro: 'price_1SAkpqIxRGF259ZEZoW96l7pPo5NkDfG2OiKCSYV0ieCIlObHJgVNnOg93EmPkYH4HzOm0M5q8Q8eEgVSO74gxkC00Hw38Q2yy', // Pro $19.99/month
-  ultra: 'price_1SAkpqIxRGF259ZEZoW96l7pPo5NkDfG2OiKCSYV0ieCIlObHJgVNnOg93EmPkYH4HzOm0M5q8Q8eEgVSO74gxkC00Hw38Q2yy' // Ultra $39.99/month - You'll need to create this in Stripe
+  pro: 'price_1SBQPvIxRGF259ZE76mXrkA4', // Humanizer Pro
+  ultra: 'price_1SBQOpIxRGF259ZEXgH7kuYV' // Humanizer Ultra
 };
 
 interface StripeCheckoutProps {
