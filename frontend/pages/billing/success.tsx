@@ -1,203 +1,75 @@
 import React, { useEffect, useState } from 'react';
-import Head from 'next/head';
+import { useRouter } from 'next/router';
 import Link from 'next/link';
-import Header from '../../components/Header';
-import api from '../../lib/api';
 
-export default function BillingSuccessPage() {
-  const [sessionData, setSessionData] = useState(null);
+const BillingSuccess: React.FC = () => {
+  const router = useRouter();
+  const { session_id } = router.query;
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [sessionData, setSessionData] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const queryString = window.location.search;
-    const urlParams = new URLSearchParams(queryString);
-    const sessionId = urlParams.get('session_id');
-
-    if (sessionId) {
-      // You could fetch session details here if needed
-      // For now, we'll just show success
-      setLoading(false);
-    } else {
-      setError('No session ID found');
+    if (session_id) {
+      // You can optionally fetch session details here
       setLoading(false);
     }
-  }, []);
+  }, [session_id]);
 
   if (loading) {
     return (
-      <div style={{ 
-        minHeight: '100vh', 
-        background: 'linear-gradient(135deg, #f0f9ff 0%, #fefce8 100%)',
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        <div style={{
-          width: '40px',
-          height: '40px',
-          border: '4px solid #e5e7eb',
-          borderTop: '4px solid #10b981',
-          borderRadius: '50%',
-          animation: 'spin 1s linear infinite'
-        }} />
-        <style jsx>{`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        `}</style>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Processing your payment...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <>
-      <Head>
-        <title>Payment Successful - Humanizer Pro</title>
-        <meta name="description" content="Your subscription has been successfully activated" />
-      </Head>
-
-      <div style={{ 
-        minHeight: '100vh', 
-        background: 'linear-gradient(135deg, #f0f9ff 0%, #fefce8 100%)',
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-      }}>
-        <Header currentPage="billing" />
-
-        <main style={{ 
-          padding: '3rem 2rem', 
-          maxWidth: '600px', 
-          margin: '0 auto',
-          textAlign: 'center'
-        }}>
-          <div style={{
-            backgroundColor: 'white',
-            borderRadius: '12px',
-            padding: '3rem 2rem',
-            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
-            border: '1px solid #e5e7eb'
-          }}>
-            {error ? (
-              <>
-                <div style={{
-                  width: '80px',
-                  height: '80px',
-                  backgroundColor: '#fef2f2',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  margin: '0 auto 2rem',
-                  border: '2px solid #fecaca'
-                }}>
-                  <span style={{ fontSize: '2rem', color: '#dc2626' }}>❌</span>
-                </div>
-                <h1 style={{
-                  fontSize: '2rem',
-                  fontWeight: 'bold',
-                  color: '#dc2626',
-                  marginBottom: '1rem'
-                }}>
-                  Payment Error
-                </h1>
-                <p style={{
-                  color: '#6b7280',
-                  fontSize: '1.1rem',
-                  marginBottom: '2rem',
-                  lineHeight: '1.6'
-                }}>
-                  {error}
-                </p>
-              </>
-            ) : (
-              <>
-                <div style={{
-                  width: '80px',
-                  height: '80px',
-                  backgroundColor: '#d1fae5',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  margin: '0 auto 2rem',
-                  border: '2px solid #10b981'
-                }}>
-                  <span style={{ fontSize: '2rem', color: '#10b981' }}>✅</span>
-                </div>
-                <h1 style={{
-                  fontSize: '2rem',
-                  fontWeight: 'bold',
-                  color: '#1f2937',
-                  marginBottom: '1rem'
-                }}>
-                  Payment Successful!
-                </h1>
-                <p style={{
-                  color: '#6b7280',
-                  fontSize: '1.1rem',
-                  marginBottom: '2rem',
-                  lineHeight: '1.6'
-                }}>
-                  Welcome to Humanizer Pro! Your subscription has been activated and you now have access to all premium features.
-                </p>
-                <div style={{
-                  backgroundColor: '#f0f9ff',
-                  border: '1px solid #bae6fd',
-                  borderRadius: '8px',
-                  padding: '1rem',
-                  marginBottom: '2rem'
-                }}>
-                  <p style={{
-                    color: '#1e40af',
-                    fontSize: '0.9rem',
-                    margin: 0
-                  }}>
-                    💡 A confirmation email has been sent to your registered email address with your subscription details.
-                  </p>
-                </div>
-              </>
-            )}
-
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-              <Link href="/dashboard/humanizer">
-                <button style={{
-                  backgroundColor: '#10b981',
-                  color: 'white',
-                  border: 'none',
-                  padding: '0.75rem 1.5rem',
-                  borderRadius: '8px',
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  textDecoration: 'none',
-                  display: 'inline-block'
-                }}>
-                  Start Humanizing
-                </button>
-              </Link>
-              
-              <Link href="/pricing">
-                <button style={{
-                  backgroundColor: 'transparent',
-                  color: '#6b7280',
-                  border: '1px solid #d1d5db',
-                  padding: '0.75rem 1.5rem',
-                  borderRadius: '8px',
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  textDecoration: 'none',
-                  display: 'inline-block'
-                }}>
-                  View Plans
-                </button>
-              </Link>
-            </div>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8 text-center">
+        <div className="mb-6">
+          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+            <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
           </div>
-        </main>
+        </div>
+        
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">
+          Payment Successful!
+        </h1>
+        
+        <p className="text-gray-600 mb-6">
+          Thank you for subscribing! Your payment has been processed successfully and your subscription is now active.
+        </p>
+        
+        {session_id && (
+          <p className="text-sm text-gray-500 mb-6">
+            Session ID: {session_id}
+          </p>
+        )}
+        
+        <div className="space-y-3">
+          <Link 
+            href="/dashboard"
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors inline-block"
+          >
+            Go to Dashboard
+          </Link>
+          
+          <Link 
+            href="/billing"
+            className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 transition-colors inline-block"
+          >
+            View Billing
+          </Link>
+        </div>
       </div>
-    </>
+    </div>
   );
-}
+};
+
+export default BillingSuccess;

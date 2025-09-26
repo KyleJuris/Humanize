@@ -1,122 +1,44 @@
 import React from 'react';
-import Head from 'next/head';
 import Link from 'next/link';
-import Header from '../../components/Header';
 
-export default function BillingCancelPage() {
+const BillingCancel: React.FC = () => {
   return (
-    <>
-      <Head>
-        <title>Payment Cancelled - Humanizer Pro</title>
-        <meta name="description" content="Your payment was cancelled" />
-      </Head>
-
-      <div style={{ 
-        minHeight: '100vh', 
-        background: 'linear-gradient(135deg, #f0f9ff 0%, #fefce8 100%)',
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-      }}>
-        <Header currentPage="billing" />
-
-        <main style={{ 
-          padding: '3rem 2rem', 
-          maxWidth: '600px', 
-          margin: '0 auto',
-          textAlign: 'center'
-        }}>
-          <div style={{
-            backgroundColor: 'white',
-            borderRadius: '12px',
-            padding: '3rem 2rem',
-            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
-            border: '1px solid #e5e7eb'
-          }}>
-            <div style={{
-              width: '80px',
-              height: '80px',
-              backgroundColor: '#fef3c7',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 2rem',
-              border: '2px solid #f59e0b'
-            }}>
-              <span style={{ fontSize: '2rem', color: '#f59e0b' }}>⚠️</span>
-            </div>
-            
-            <h1 style={{
-              fontSize: '2rem',
-              fontWeight: 'bold',
-              color: '#1f2937',
-              marginBottom: '1rem'
-            }}>
-              Payment Cancelled
-            </h1>
-            
-            <p style={{
-              color: '#6b7280',
-              fontSize: '1.1rem',
-              marginBottom: '2rem',
-              lineHeight: '1.6'
-            }}>
-              No worries! Your payment was cancelled and no charges have been made. You can try again anytime or explore our free features.
-            </p>
-            
-            <div style={{
-              backgroundColor: '#f0f9ff',
-              border: '1px solid #bae6fd',
-              borderRadius: '8px',
-              padding: '1rem',
-              marginBottom: '2rem'
-            }}>
-              <p style={{
-                color: '#1e40af',
-                fontSize: '0.9rem',
-                margin: 0
-              }}>
-                💡 You can still use our basic humanization features for free, or upgrade anytime to unlock premium features.
-              </p>
-            </div>
-
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-              <Link href="/pricing">
-                <button style={{
-                  backgroundColor: '#10b981',
-                  color: 'white',
-                  border: 'none',
-                  padding: '0.75rem 1.5rem',
-                  borderRadius: '8px',
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  textDecoration: 'none',
-                  display: 'inline-block'
-                }}>
-                  Try Again
-                </button>
-              </Link>
-              
-              <Link href="/dashboard/humanizer">
-                <button style={{
-                  backgroundColor: 'transparent',
-                  color: '#6b7280',
-                  border: '1px solid #d1d5db',
-                  padding: '0.75rem 1.5rem',
-                  borderRadius: '8px',
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  textDecoration: 'none',
-                  display: 'inline-block'
-                }}>
-                  Continue Free
-                </button>
-              </Link>
-            </div>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8 text-center">
+        <div className="mb-6">
+          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100">
+            <svg className="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </div>
-        </main>
+        </div>
+        
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">
+          Payment Cancelled
+        </h1>
+        
+        <p className="text-gray-600 mb-6">
+          Your payment was cancelled. No charges have been made to your account.
+        </p>
+        
+        <div className="space-y-3">
+          <Link 
+            href="/pricing"
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors inline-block"
+          >
+            Try Again
+          </Link>
+          
+          <Link 
+            href="/dashboard"
+            className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 transition-colors inline-block"
+          >
+            Back to Dashboard
+          </Link>
+        </div>
       </div>
-    </>
+    </div>
   );
-}
+};
+
+export default BillingCancel;

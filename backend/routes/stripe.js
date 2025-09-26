@@ -29,47 +29,135 @@ const authenticateUser = async (req, res, next) => {
 // Initialize Stripe with secret key
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
-// Stripe price IDs for the products
-const PRICE_IDS = {
-  pro: 'price_1SAkpqIxRGF259ZEZoW96l7pPo5NkDfG2OiKCSYV0ieCIlObHJgVNnOg93EmPkYH4HzOm0M5q8Q8eEgVSO74gxkC00Hw38Q2yy', // Pro $19.99/month
-  ultra: 'price_1SAkpqIxRGF259ZEZoW96l7pPo5NkDfG2OiKCSYV0ieCIlObHJgVNnOg93EmPkYH4HzOm0M5q8Q8eEgVSO74gxkC00Hw38Q2yy' // Ultra $39.99/month - You'll need to create this in Stripe
+// Valid product configurations
+const VALID_PRODUCTS = {
+  'price_1SBQPvIxRGF259ZE76mXrkA4': {
+    productId: 'prod_T7fl4RTFxDw5aE',
+    name: 'Humanizer Pro',
+    type: 'pro'
+  },
+  'price_1SBQOpIxRGF259ZEXgH7kuYV': {
+    productId: 'prod_T7fkQX8Kqwr76F',
+    name: 'Humanizer Ultra',
+    type: 'ultra'
+  }
 };
 
-// Create checkout session
-router.post('/create-checkout-session', authenticateUser, async (req, res) => {
+// Validation functions
+function isValidPriceId(priceId) {
+  return priceId in VALID_PRODUCTS;
+}
+
+function validateEnvironment(secretKey) {
+  if (!secretKey) {
+    return { isValid: false, environment: 'unknown', error: 'No secret key provided' };
+  }
+  
+  if (secretKey.includes('your-stripe-secret-key')) {
+    return { isValid: false, environment: 'unknown', error: 'Placeholder secret key detected' };
+  }
+  
+  if (secretKey.startsWith('sk_test_')) {
+    return { isValid: true, environment: 'test' };
+  } else if (secretKey.startsWith('sk_live_')) {
+    return { isValid: true, environment: 'live' };
+  } else {
+    return { isValid: false, environment: 'unknown', error: 'Invalid secret key format' };
+  }
+}
+
+// Create checkout session - MAIN ENDPOINT FOR FRONTEND
+router.post('/checkout-session', authenticateUser, async (req, res) => {
   try {
     const { priceId } = req.body;
     const userId = req.user.id;
     const userEmail = req.user.email;
 
-    console.log('Creating checkout session for user:', userEmail, 'with price:', priceId);
+    console.log('=== STRIPE CHECKOUT SESSION CREATION ===');
+    console.log('User:', userEmail, 'PriceId:', priceId);
 
+    // Validate required fields
+    if (!priceId) {
+      console.error('Missing priceId in request body');
+      return res.status(400).json({ 
+        error: 'priceId is required',
+        receivedData: { priceId }
+      });
+    }
+
+    // Validate priceId against known products
+    if (!isValidPriceId(priceId)) {
+      console.error('Invalid priceId:', priceId);
+      return res.status(400).json({ 
+        error: 'Invalid priceId provided',
+        receivedPriceId: priceId,
+        validPriceIds: Object.keys(VALID_PRODUCTS),
+        validProducts: Object.values(VALID_PRODUCTS).map(p => ({ name: p.name, priceId: Object.keys(VALID_PRODUCTS).find(k => VALID_PRODUCTS[k] === p) }))
+      });
+    }
+
+    // Validate Stripe environment
+    const envValidation = validateEnvironment(process.env.STRIPE_SECRET_KEY);
+    if (!envValidation.isValid) {
+      console.error('Stripe environment validation failed:', envValidation.error);
+      return res.status(500).json({ 
+        error: 'Stripe configuration error',
+        details: envValidation.error,
+        environment: envValidation.environment
+      });
+    }
+
+    console.log('✅ Environment validation passed:', envValidation.environment);
+    console.log('✅ PriceId validation passed:', priceId, '- Product:', VALID_PRODUCTS[priceId].name);
+
+    const productInfo = VALID_PRODUCTS[priceId];
+    const siteUrl = process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://humanize-pro.vercel.app';
+
+    console.log('Creating Stripe checkout session with priceId:', priceId, 'for product:', productInfo.name);
+
+    // Create Stripe checkout session with absolute URLs
     const session = await stripe.checkout.sessions.create({
-      ui_mode: 'embedded',
+      mode: 'subscription',
       line_items: [
         {
           price: priceId,
           quantity: 1,
         },
       ],
-      mode: 'subscription',
-      return_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/pricing?session_id={CHECKOUT_SESSION_ID}`,
       customer_email: userEmail,
+      success_url: `${siteUrl}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${siteUrl}/billing/cancel`,
       metadata: {
-        userId: userId
+        userId: userId, // Stable user identifier
+        userEmail: userEmail,
+        product_name: productInfo.name,
+        product_type: productInfo.type,
+        product_id: productInfo.productId,
+        environment: envValidation.environment
       },
       automatic_tax: { enabled: true },
     });
 
-    console.log('Checkout session created:', session.id);
+    console.log('Stripe checkout session created:', session.id);
 
     res.json({
-      clientSecret: session.client_secret
+      id: session.id,
+      url: session.url,
+      product: {
+        name: productInfo.name,
+        type: productInfo.type,
+        priceId: priceId,
+        productId: productInfo.productId
+      },
+      environment: envValidation.environment
     });
 
   } catch (error) {
     console.error('Error creating checkout session:', error);
-    res.status(400).json({ error: error.message });
+    res.status(500).json({ 
+      error: error.message,
+      details: process.env.NODE_ENV === 'development' ? error : undefined
+    });
   }
 });
 
@@ -212,6 +300,52 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
 
   try {
     switch (event.type) {
+      case 'checkout.session.completed':
+        const session = event.data.object;
+        console.log('=== CHECKOUT SESSION COMPLETED ===');
+        console.log('Session ID:', session.id);
+        console.log('Customer Email:', session.customer_details?.email);
+        console.log('Metadata:', session.metadata);
+        
+        // Extract user information from metadata
+        const userId = session.metadata?.userId;
+        const userEmail = session.metadata?.userEmail;
+        const productName = session.metadata?.product_name;
+        const productType = session.metadata?.product_type;
+        
+        if (!userId || !userEmail) {
+          console.error('Missing user information in session metadata');
+          break;
+        }
+        
+        console.log('Updating user subscription in database...');
+        console.log('User ID:', userId, 'Email:', userEmail, 'Product:', productName);
+        
+        // Update user subscription status in Supabase (idempotent)
+        try {
+          const { error: updateError } = await supabaseAnon
+            .from('profiles')
+            .update({
+              subscription_status: 'active',
+              subscription_type: productType,
+              subscription_product: productName,
+              stripe_customer_id: session.customer,
+              stripe_subscription_id: session.subscription,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', userId);
+            
+          if (updateError) {
+            console.error('Error updating user subscription:', updateError);
+          } else {
+            console.log('✅ User subscription updated successfully');
+          }
+        } catch (dbError) {
+          console.error('Database error updating subscription:', dbError);
+        }
+        
+        break;
+
       case 'invoice.payment_succeeded':
         const invoice = event.data.object;
         console.log('Payment succeeded for invoice:', invoice.id);

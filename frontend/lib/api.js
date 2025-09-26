@@ -176,9 +176,9 @@ class ApiClient {
   }
 
   async createHostedCheckoutSession(priceId, customerEmail) {
-    return this.request('/stripe-hosted/create-checkout-session', {
+    return this.request('/stripe/checkout-session', {
       method: 'POST',
-      body: JSON.stringify({ priceId, customerEmail }),
+      body: JSON.stringify({ priceId }),
     });
   }
 
