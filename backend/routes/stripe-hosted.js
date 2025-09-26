@@ -99,7 +99,34 @@ router.post('/create-checkout-session', authenticateUser, async (req, res) => {
     console.log('Request body:', req.body);
     console.log('Content-Type header:', req.headers['content-type']);
     
-    const { priceId, customerEmail, success_url, cancel_url } = req.body;
+    // Safe fallback parse in case body arrived as string/Buffer
+    let requestBody = req.body;
+    if (typeof requestBody === 'string') {
+      try {
+        requestBody = JSON.parse(requestBody);
+        console.log('✅ Parsed string body to JSON:', requestBody);
+      } catch (parseError) {
+        console.error('❌ Failed to parse string body as JSON:', parseError);
+        return res.status(400).json({ 
+          error: 'Invalid JSON in request body',
+          details: parseError.message
+        });
+      }
+    } else if (Buffer.isBuffer(requestBody)) {
+      try {
+        const bodyString = requestBody.toString('utf8');
+        requestBody = JSON.parse(bodyString);
+        console.log('✅ Parsed Buffer body to JSON:', requestBody);
+      } catch (parseError) {
+        console.error('❌ Failed to parse Buffer body as JSON:', parseError);
+        return res.status(400).json({ 
+          error: 'Invalid JSON in request body',
+          details: parseError.message
+        });
+      }
+    }
+    
+    const { priceId, customerEmail, success_url, cancel_url } = requestBody;
     const userId = req.user.id;
     const userEmail = customerEmail || req.user.email;
 
