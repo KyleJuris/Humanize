@@ -167,7 +167,7 @@ class ApiClient {
     });
   }
 
-  // Stripe subscription methods - using Next.js API routes
+  // Stripe subscription methods - using Next.js App Router API routes
   async createCheckoutSession(priceId) {
     return this.requestWithBaseUrl(STRIPE_API_BASE_URL, '/stripe/create-checkout-session', {
       method: 'POST',
