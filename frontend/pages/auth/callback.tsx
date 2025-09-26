@@ -52,7 +52,7 @@ export default function AuthCallback() {
       window.history.replaceState({}, document.title, '/auth/callback')
       
       setTimeout(() => {
-        router.push('/')
+        router.push('/dashboard/humanizer')
       }, 2000)
       
     } catch (error) {
@@ -161,9 +161,9 @@ export default function AuthCallback() {
             // Clear the URL hash to remove sensitive tokens
             window.history.replaceState({}, document.title, '/auth/callback')
             
-            // Redirect to home after successful auth
+            // Redirect to humanizer after successful auth
             setTimeout(() => {
-              router.push('/')
+              router.push('/dashboard/humanizer')
             }, 2000)
           } else {
             throw new Error('Failed to authenticate user')
@@ -182,7 +182,7 @@ export default function AuthCallback() {
             window.history.replaceState({}, document.title, '/auth/callback')
             
             setTimeout(() => {
-              router.push('/')
+              router.push('/dashboard/humanizer')
             }, 2000)
           } else {
             await createGuestSession()

@@ -19,12 +19,6 @@ frontend/.env.development.local
 frontend/.env.test.local
 frontend/.env.production.local
 
-# Allow editing .env files for local development (temporarily)
-!frontend/.env.local
-!backend/.env.local
-!frontend/.env
-!backend/.env
-
 # Production builds
 .next/
 out/

@@ -163,6 +163,24 @@ class ApiClient {
       body: JSON.stringify(profileData),
     });
   }
+
+  // Stripe subscription methods
+  async createSubscription(subscriptionData) {
+    return this.request('/stripe/create-subscription', {
+      method: 'POST',
+      body: JSON.stringify(subscriptionData),
+    });
+  }
+
+  async getSubscriptionStatus() {
+    return this.request('/stripe/subscription-status');
+  }
+
+  async cancelSubscription() {
+    return this.request('/stripe/cancel-subscription', {
+      method: 'POST',
+    });
+  }
 }
 
 export default new ApiClient();

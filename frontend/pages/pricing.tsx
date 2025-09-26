@@ -1,8 +1,101 @@
-import React from 'react'
+import React, { useState } from 'react'
 import Head from 'next/head'
 import Header from '../components/Header'
+import StripeCheckout from '../components/StripeCheckout'
+import { useAuth } from '../contexts/AuthContext'
 
 export default function PricingPage() {
+  const { user, isAuthenticated } = useAuth()
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual')
+  const [showCheckout, setShowCheckout] = useState(false)
+  const [selectedPlan, setSelectedPlan] = useState<'pro' | 'ultra' | null>(null)
+  const [checkoutError, setCheckoutError] = useState<string | null>(null)
+
+  const handleSubscribe = (plan: 'pro' | 'ultra') => {
+    if (!isAuthenticated) {
+      // Redirect to auth page
+      window.location.href = '/auth'
+      return
+    }
+    setSelectedPlan(plan)
+    setShowCheckout(true)
+    setCheckoutError(null)
+  }
+
+  const handleCheckoutSuccess = () => {
+    setShowCheckout(false)
+    setSelectedPlan(null)
+    // Redirect to dashboard or show success message
+    window.location.href = '/dashboard/humanizer'
+  }
+
+  const handleCheckoutError = (error: string) => {
+    setCheckoutError(error)
+  }
+
+  const plans = {
+    basic: {
+      name: 'Basic',
+      monthlyPrice: 6.99,
+      annualPrice: 4.99,
+      words: '5,000 words per month',
+      features: [
+        '500 words per request',
+        'Bypass all AI detectors (incl. Turnitin & GPTZero)',
+        'Basic Humanization Engine',
+        'Plagiarism-free',
+        'Error-free rewriting',
+        'Undetectable results',
+        'Unlimited AI detection',
+        '20 languages supported'
+      ]
+    },
+    pro: {
+      name: 'Pro',
+      monthlyPrice: 19.99,
+      annualPrice: 14.99,
+      words: '15,000 words per month',
+      features: [
+        '1,500 words per request',
+        'My Writing Style',
+        'Bypass all AI detectors (incl. Turnitin & GPTZero)',
+        'Advanced Humanization Engine',
+        'Plagiarism-free',
+        'Error-free rewriting',
+        'Undetectable results',
+        'Unlimited AI detection',
+        '50+ languages supported',
+        'Advanced Turnitin Bypass Engine',
+        'Human-like results',
+        'Unlimited grammar checks',
+        'Fast mode'
+      ]
+    },
+    ultra: {
+      name: 'Ultra',
+      monthlyPrice: 39.99,
+      annualPrice: 29.99,
+      words: '30,000 words per month',
+      features: [
+        '3,000 words per request',
+        'My Writing Style',
+        'Bypass all AI detectors (incl. Turnitin & GPTZero)',
+        'Advanced Humanization Engine',
+        'Plagiarism-free',
+        'Error-free rewriting',
+        'Undetectable results',
+        'Unlimited AI detection',
+        '50+ languages supported',
+        'Advanced Turnitin Bypass Engine',
+        'Human-like results',
+        'Unlimited grammar checks',
+        'Fast mode',
+        'Ultra-human writing output',
+        'Priority support'
+      ]
+    }
+  }
+
   return (
     <>
       <Head>
@@ -23,30 +116,82 @@ export default function PricingPage() {
         <main style={{ padding: '3rem 2rem', maxWidth: '1200px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
             <h1 style={{
-              fontSize: '3rem',
+              fontSize: '2.5rem',
               fontWeight: 'bold',
               color: '#1f2937',
               marginBottom: '1rem'
             }}>
-              Simple, Transparent Pricing
+              Flexible pricing plans for you
             </h1>
-            <p style={{
-              fontSize: '1.25rem',
-              color: '#6b7280',
-              marginBottom: '2rem'
+          </div>
+
+          {/* Billing Toggle */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: '1rem',
+            marginBottom: '3rem'
+          }}>
+            <span style={{
+              color: billingCycle === 'monthly' ? '#1f2937' : '#6b7280',
+              fontWeight: billingCycle === 'monthly' ? '600' : '400'
             }}>
-              Choose the perfect plan for your content humanization needs
-            </p>
+              Monthly
+            </span>
+            <button
+              onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'annual' : 'monthly')}
+              style={{
+                width: '60px',
+                height: '30px',
+                backgroundColor: billingCycle === 'annual' ? '#10b981' : '#d1d5db',
+                border: 'none',
+                borderRadius: '15px',
+                position: 'relative',
+                cursor: 'pointer',
+                transition: 'background-color 0.3s'
+              }}
+            >
+              <div style={{
+                width: '26px',
+                height: '26px',
+                backgroundColor: 'white',
+                borderRadius: '50%',
+                position: 'absolute',
+                top: '2px',
+                left: billingCycle === 'annual' ? '32px' : '2px',
+                transition: 'left 0.3s',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+              }} />
+            </button>
+            <span style={{
+              color: billingCycle === 'annual' ? '#1f2937' : '#6b7280',
+              fontWeight: billingCycle === 'annual' ? '600' : '400'
+            }}>
+              Annual
+            </span>
+            {billingCycle === 'annual' && (
+              <span style={{
+                backgroundColor: '#10b981',
+                color: 'white',
+                padding: '0.25rem 0.5rem',
+                borderRadius: '4px',
+                fontSize: '0.8rem',
+                fontWeight: '600'
+              }}>
+                SAVE 50%
+              </span>
+            )}
           </div>
 
           {/* Pricing Cards */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
             gap: '2rem',
             marginBottom: '4rem'
           }}>
-            {/* Free Plan */}
+            {/* Basic Plan */}
             <div style={{
               backgroundColor: 'white',
               borderRadius: '12px',
@@ -57,7 +202,6 @@ export default function PricingPage() {
               display: 'flex',
               flexDirection: 'column'
             }}>
-              
               <h3 style={{
                 fontSize: '1.5rem',
                 fontWeight: '600',
@@ -65,48 +209,76 @@ export default function PricingPage() {
                 marginBottom: '0.5rem',
                 textAlign: 'center'
               }}>
-                Free
+                {plans.basic.name}
               </h3>
               
               <div style={{
-                fontSize: '3rem',
+                fontSize: '2.5rem',
                 fontWeight: 'bold',
-                color: '#10b981',
+                color: '#1f2937',
                 textAlign: 'center',
-                marginBottom: '1rem'
+                marginBottom: '0.5rem'
               }}>
-                $0
+                ${billingCycle === 'annual' ? plans.basic.annualPrice : plans.basic.monthlyPrice}
                 <span style={{ fontSize: '1rem', color: '#6b7280', fontWeight: 'normal' }}>/month</span>
               </div>
+
+              {billingCycle === 'annual' && (
+                <div style={{
+                  textAlign: 'center',
+                  marginBottom: '1rem'
+                }}>
+                  <span style={{
+                    textDecoration: 'line-through',
+                    color: '#6b7280',
+                    fontSize: '1rem'
+                  }}>
+                    ${plans.basic.monthlyPrice}
+                  </span>
+                </div>
+              )}
+
+              <div style={{
+                fontSize: '0.9rem',
+                color: '#6b7280',
+                textAlign: 'center',
+                marginBottom: '1.5rem'
+              }}>
+                {plans.basic.words}
+              </div>
               
-              <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem' }}>
-                <li style={{ padding: '0.5rem 0', color: '#374151', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  ✅ 1,000 words/month
-                </li>
-                <li style={{ padding: '0.5rem 0', color: '#374151', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  ✅ Basic humanization
-                </li>
-                <li style={{ padding: '0.5rem 0', color: '#374151', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  ✅ Standard tones
-                </li>
-                <li style={{ padding: '0.5rem 0', color: '#374151', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  ✅ Email support
-                </li>
+              <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem', flex: 1 }}>
+                {plans.basic.features.map((feature, index) => (
+                  <li key={index} style={{ 
+                    padding: '0.5rem 0', 
+                    color: '#374151', 
+                    display: 'flex', 
+                    alignItems: 'flex-start', 
+                    gap: '0.5rem',
+                    fontSize: '0.9rem'
+                  }}>
+                    <span style={{ color: '#10b981', marginTop: '0.1rem' }}>✓</span>
+                    {feature}
+                  </li>
+                ))}
               </ul>
               
-              <button style={{
-                width: '100%',
-                backgroundColor: '#10b981',
-                color: 'white',
-                border: 'none',
-                padding: '0.75rem 1.5rem',
-                borderRadius: '8px',
-                fontSize: '1rem',
-                fontWeight: '600',
-                cursor: 'pointer',
-                marginTop: 'auto'
-              }}>
-                Get Started Free
+              <button 
+                onClick={() => handleSubscribe('pro')}
+                style={{
+                  width: '100%',
+                  backgroundColor: '#10b981',
+                  color: 'white',
+                  border: 'none',
+                  padding: '0.75rem 1.5rem',
+                  borderRadius: '8px',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  marginTop: 'auto'
+                }}
+              >
+                Subscribe
               </button>
             </div>
 
@@ -115,68 +287,110 @@ export default function PricingPage() {
               backgroundColor: 'white',
               borderRadius: '12px',
               padding: '2rem',
-              boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-              border: '1px solid rgba(0,0,0,0.05)',
+              boxShadow: '0 8px 25px rgba(0,0,0,0.15)',
+              border: '2px solid #10b981',
               position: 'relative',
               display: 'flex',
-              flexDirection: 'column'
+              flexDirection: 'column',
+              transform: 'scale(1.05)'
             }}>
+              <div style={{
+                position: 'absolute',
+                top: '-12px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                backgroundColor: '#10b981',
+                color: 'white',
+                padding: '0.5rem 1rem',
+                borderRadius: '20px',
+                fontSize: '0.8rem',
+                fontWeight: '600'
+              }}>
+                MOST POPULAR
+              </div>
+
               <h3 style={{
                 fontSize: '1.5rem',
                 fontWeight: '600',
                 color: '#1f2937',
                 marginBottom: '0.5rem',
-                textAlign: 'center'
+                textAlign: 'center',
+                marginTop: '1rem'
               }}>
-                Pro
+                {plans.pro.name}
               </h3>
               
               <div style={{
-                fontSize: '3rem',
+                fontSize: '2.5rem',
                 fontWeight: 'bold',
-                color: '#10b981',
+                color: '#1f2937',
                 textAlign: 'center',
-                marginBottom: '1rem'
+                marginBottom: '0.5rem'
               }}>
-                $19
+                ${billingCycle === 'annual' ? plans.pro.annualPrice : plans.pro.monthlyPrice}
                 <span style={{ fontSize: '1rem', color: '#6b7280', fontWeight: 'normal' }}>/month</span>
               </div>
+
+              {billingCycle === 'annual' && (
+                <div style={{
+                  textAlign: 'center',
+                  marginBottom: '1rem'
+                }}>
+                  <span style={{
+                    textDecoration: 'line-through',
+                    color: '#6b7280',
+                    fontSize: '1rem'
+                  }}>
+                    ${plans.pro.monthlyPrice}
+                  </span>
+                </div>
+              )}
+
+              <div style={{
+                fontSize: '0.9rem',
+                color: '#6b7280',
+                textAlign: 'center',
+                marginBottom: '1.5rem'
+              }}>
+                {plans.pro.words}
+              </div>
               
-              <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem' }}>
-                <li style={{ padding: '0.5rem 0', color: '#374151', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  ✅ 50,000 words/month
-                </li>
-                <li style={{ padding: '0.5rem 0', color: '#374151', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  ✅ Advanced humanization
-                </li>
-                <li style={{ padding: '0.5rem 0', color: '#374151', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  ✅ All tone options
-                </li>
-                <li style={{ padding: '0.5rem 0', color: '#374151', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  ✅ Priority support
-                </li>
-                <li style={{ padding: '0.5rem 0', color: '#374151', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  ✅ API access
-                </li>
+              <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem', flex: 1 }}>
+                {plans.pro.features.map((feature, index) => (
+                  <li key={index} style={{ 
+                    padding: '0.5rem 0', 
+                    color: '#374151', 
+                    display: 'flex', 
+                    alignItems: 'flex-start', 
+                    gap: '0.5rem',
+                    fontSize: '0.9rem'
+                  }}>
+                    <span style={{ color: '#10b981', marginTop: '0.1rem' }}>✓</span>
+                    {feature}
+                  </li>
+                ))}
               </ul>
               
-              <button style={{
-                width: '100%',
-                backgroundColor: '#1f2937',
-                color: 'white',
-                border: 'none',
-                padding: '0.75rem 1.5rem',
-                borderRadius: '8px',
-                fontSize: '1rem',
-                fontWeight: '600',
-                cursor: 'pointer',
-                marginTop: 'auto'
-              }}>
-                Choose Pro
+              <button 
+                onClick={() => handleSubscribe('pro')}
+                style={{
+                  width: '100%',
+                  backgroundColor: '#10b981',
+                  color: 'white',
+                  border: 'none',
+                  padding: '0.75rem 1.5rem',
+                  borderRadius: '8px',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  marginTop: 'auto'
+                }}
+              >
+                Subscribe
               </button>
             </div>
 
-            {/* Enterprise Plan */}
+            {/* Ultra Plan */}
             <div style={{
               backgroundColor: 'white',
               borderRadius: '12px',
@@ -194,51 +408,76 @@ export default function PricingPage() {
                 marginBottom: '0.5rem',
                 textAlign: 'center'
               }}>
-                Enterprise
+                {plans.ultra.name}
               </h3>
               
               <div style={{
-                fontSize: '3rem',
+                fontSize: '2.5rem',
                 fontWeight: 'bold',
-                color: '#10b981',
+                color: '#1f2937',
                 textAlign: 'center',
-                marginBottom: '1rem'
+                marginBottom: '0.5rem'
               }}>
-                Custom
+                ${billingCycle === 'annual' ? plans.ultra.annualPrice : plans.ultra.monthlyPrice}
                 <span style={{ fontSize: '1rem', color: '#6b7280', fontWeight: 'normal' }}>/month</span>
               </div>
+
+              {billingCycle === 'annual' && (
+                <div style={{
+                  textAlign: 'center',
+                  marginBottom: '1rem'
+                }}>
+                  <span style={{
+                    textDecoration: 'line-through',
+                    color: '#6b7280',
+                    fontSize: '1rem'
+                  }}>
+                    ${plans.ultra.monthlyPrice}
+                  </span>
+                </div>
+              )}
+
+              <div style={{
+                fontSize: '0.9rem',
+                color: '#6b7280',
+                textAlign: 'center',
+                marginBottom: '1.5rem'
+              }}>
+                {plans.ultra.words}
+              </div>
               
-              <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem' }}>
-                <li style={{ padding: '0.5rem 0', color: '#374151', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  ✅ Unlimited words
-                </li>
-                <li style={{ padding: '0.5rem 0', color: '#374151', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  ✅ Custom models
-                </li>
-                <li style={{ padding: '0.5rem 0', color: '#374151', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  ✅ White-label solution
-                </li>
-                <li style={{ padding: '0.5rem 0', color: '#374151', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  ✅ Dedicated support
-                </li>
-                <li style={{ padding: '0.5rem 0', color: '#374151', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  ✅ On-premise deployment
-                </li>
+              <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem', flex: 1 }}>
+                {plans.ultra.features.map((feature, index) => (
+                  <li key={index} style={{ 
+                    padding: '0.5rem 0', 
+                    color: '#374151', 
+                    display: 'flex', 
+                    alignItems: 'flex-start', 
+                    gap: '0.5rem',
+                    fontSize: '0.9rem'
+                  }}>
+                    <span style={{ color: '#10b981', marginTop: '0.1rem' }}>✓</span>
+                    {feature}
+                  </li>
+                ))}
               </ul>
               
-              <button style={{
-                width: '100%',
-                backgroundColor: '#8b5cf6',
-                color: 'white',
-                border: 'none',
-                padding: '0.75rem 1.5rem',
-                borderRadius: '8px',
-                fontSize: '1rem',
-                fontWeight: '600',
-                cursor: 'pointer',
-                marginTop: 'auto'
-              }}>
-                Contact Sales
+              <button 
+                onClick={() => handleSubscribe('ultra')}
+                style={{
+                  width: '100%',
+                  backgroundColor: '#10b981',
+                  color: 'white',
+                  border: 'none',
+                  padding: '0.75rem 1.5rem',
+                  borderRadius: '8px',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  marginTop: 'auto'
+                }}
+              >
+                Subscribe
               </button>
             </div>
           </div>
@@ -247,12 +486,12 @@ export default function PricingPage() {
           <div style={{
             backgroundColor: 'white',
             borderRadius: '12px',
-            padding: '2rem',
+            padding: '3rem',
             boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
             border: '1px solid rgba(0,0,0,0.05)'
           }}>
             <h3 style={{
-              fontSize: '1.5rem',
+              fontSize: '2rem',
               fontWeight: '600',
               color: '#1f2937',
               marginBottom: '2rem',
@@ -270,8 +509,8 @@ export default function PricingPage() {
                 <h4 style={{ fontWeight: '600', color: '#1f2937', marginBottom: '0.5rem' }}>
                   Can I change plans anytime?
                 </h4>
-                <p style={{ color: '#6b7280', fontSize: '0.9rem' }}>
-                  Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately.
+                <p style={{ color: '#6b7280', fontSize: '0.9rem', lineHeight: '1.5' }}>
+                  Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately and you'll be charged or credited the difference.
                 </p>
               </div>
               
@@ -279,8 +518,8 @@ export default function PricingPage() {
                 <h4 style={{ fontWeight: '600', color: '#1f2937', marginBottom: '0.5rem' }}>
                   What happens to unused words?
                 </h4>
-                <p style={{ color: '#6b7280', fontSize: '0.9rem' }}>
-                  Unused words don't roll over to the next month. Each plan resets monthly.
+                <p style={{ color: '#6b7280', fontSize: '0.9rem', lineHeight: '1.5' }}>
+                  Unused words don't roll over to the next month. Each plan resets monthly with your full word allocation.
                 </p>
               </div>
               
@@ -288,8 +527,8 @@ export default function PricingPage() {
                 <h4 style={{ fontWeight: '600', color: '#1f2937', marginBottom: '0.5rem' }}>
                   Is there a free trial?
                 </h4>
-                <p style={{ color: '#6b7280', fontSize: '0.9rem' }}>
-                  Yes, all paid plans come with a 7-day free trial. No credit card required.
+                <p style={{ color: '#6b7280', fontSize: '0.9rem', lineHeight: '1.5' }}>
+                  Yes, all paid plans come with a 7-day free trial. No credit card required to start.
                 </p>
               </div>
               
@@ -297,13 +536,168 @@ export default function PricingPage() {
                 <h4 style={{ fontWeight: '600', color: '#1f2937', marginBottom: '0.5rem' }}>
                   Do you offer refunds?
                 </h4>
-                <p style={{ color: '#6b7280', fontSize: '0.9rem' }}>
-                  We offer a 30-day money-back guarantee for all paid plans.
+                <p style={{ color: '#6b7280', fontSize: '0.9rem', lineHeight: '1.5' }}>
+                  We offer a 30-day money-back guarantee for all paid plans. Contact support for assistance.
+                </p>
+              </div>
+
+              <div>
+                <h4 style={{ fontWeight: '600', color: '#1f2937', marginBottom: '0.5rem' }}>
+                  How does the AI detection bypass work?
+                </h4>
+                <p style={{ color: '#6b7280', fontSize: '0.9rem', lineHeight: '1.5' }}>
+                  Our advanced algorithms rewrite content to appear more human-like, bypassing detection tools like Turnitin, GPTZero, and others.
+                </p>
+              </div>
+
+              <div>
+                <h4 style={{ fontWeight: '600', color: '#1f2937', marginBottom: '0.5rem' }}>
+                  What languages are supported?
+                </h4>
+                <p style={{ color: '#6b7280', fontSize: '0.9rem', lineHeight: '1.5' }}>
+                  Basic plan supports 20 languages, while Pro and Ultra plans support 50+ languages including English, Spanish, French, German, and more.
+                </p>
+              </div>
+
+              <div>
+                <h4 style={{ fontWeight: '600', color: '#1f2937', marginBottom: '0.5rem' }}>
+                  Can I cancel anytime?
+                </h4>
+                <p style={{ color: '#6b7280', fontSize: '0.9rem', lineHeight: '1.5' }}>
+                  Yes, you can cancel your subscription at any time. You'll continue to have access until the end of your billing period.
+                </p>
+              </div>
+
+              <div>
+                <h4 style={{ fontWeight: '600', color: '#1f2937', marginBottom: '0.5rem' }}>
+                  Is my data secure?
+                </h4>
+                <p style={{ color: '#6b7280', fontSize: '0.9rem', lineHeight: '1.5' }}>
+                  Absolutely. We use enterprise-grade encryption and never store your content permanently. Your privacy is our priority.
                 </p>
               </div>
             </div>
           </div>
+
+          {/* Contact Section */}
+          <div style={{
+            textAlign: 'center',
+            marginTop: '3rem',
+            padding: '2rem',
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+            border: '1px solid rgba(0,0,0,0.05)'
+          }}>
+            <h3 style={{
+              fontSize: '1.5rem',
+              fontWeight: '600',
+              color: '#1f2937',
+              marginBottom: '1rem'
+            }}>
+              Need more? Contact Us
+            </h3>
+            <p style={{ color: '#6b7280', marginBottom: '1rem' }}>
+              Looking for custom solutions or enterprise features? We're here to help.
+            </p>
+            <button style={{
+              backgroundColor: '#10b981',
+              color: 'white',
+              border: 'none',
+              padding: '0.75rem 1.5rem',
+              borderRadius: '8px',
+              fontSize: '1rem',
+              fontWeight: '600',
+              cursor: 'pointer'
+            }}>
+              Contact Sales
+            </button>
+          </div>
+
+          {/* Terms */}
+          <div style={{
+            textAlign: 'center',
+            marginTop: '2rem',
+            fontSize: '0.8rem',
+            color: '#6b7280'
+          }}>
+            By clicking the Subscribe button, you agree to our Terms of Service and Privacy Policy.
+          </div>
         </main>
+
+        {/* Checkout Modal */}
+        {showCheckout && selectedPlan && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '2rem'
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '12px',
+              padding: '2rem',
+              maxWidth: '500px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflow: 'auto'
+            }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '1.5rem'
+              }}>
+                <h3 style={{
+                  fontSize: '1.5rem',
+                  fontWeight: '600',
+                  color: '#1f2937',
+                  margin: 0
+                }}>
+                  Subscribe to {selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1)}
+                </h3>
+                <button
+                  onClick={() => setShowCheckout(false)}
+                  style={{
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    fontSize: '1.5rem',
+                    cursor: 'pointer',
+                    color: '#6b7280'
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+
+              {checkoutError && (
+                <div style={{
+                  backgroundColor: '#fef2f2',
+                  border: '1px solid #fecaca',
+                  borderRadius: '6px',
+                  padding: '1rem',
+                  marginBottom: '1rem',
+                  color: '#dc2626'
+                }}>
+                  {checkoutError}
+                </div>
+              )}
+
+              <StripeCheckout
+                planType={selectedPlan}
+                onSuccess={handleCheckoutSuccess}
+                onError={handleCheckoutError}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </>
   )
