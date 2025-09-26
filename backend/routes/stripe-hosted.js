@@ -92,6 +92,13 @@ router.get('/create-checkout-session', (req, res) => {
 // Create hosted checkout session
 router.post('/create-checkout-session', authenticateUser, async (req, res) => {
   try {
+    // Debug logging to check request body
+    console.log('=== STRIPE HOSTED CHECKOUT DEBUG ===');
+    console.log('Request headers:', req.headers);
+    console.log('Request body type:', typeof req.body);
+    console.log('Request body:', req.body);
+    console.log('Content-Type header:', req.headers['content-type']);
+    
     const { priceId, customerEmail, success_url, cancel_url } = req.body;
     const userId = req.user.id;
     const userEmail = customerEmail || req.user.email;
