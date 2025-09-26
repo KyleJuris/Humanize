@@ -36,6 +36,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    // Check environment variables
+    if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.includes('your-stripe-secret-key')) {
+      console.error('STRIPE_SECRET_KEY is not properly configured')
+      return res.status(500).json({ error: 'Stripe configuration error. Please contact support.' })
+    }
+
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project-id')) {
+      console.error('NEXT_PUBLIC_SUPABASE_URL is not properly configured')
+      return res.status(500).json({ error: 'Database configuration error. Please contact support.' })
+    }
+
+    if (!process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_KEY.includes('your-supabase-service-key')) {
+      console.error('SUPABASE_SERVICE_KEY is not properly configured')
+      return res.status(500).json({ error: 'Database configuration error. Please contact support.' })
+    }
+
     // Authenticate user
     const user = await authenticateUser(req)
     const { priceId, customerEmail } = req.body
@@ -71,6 +87,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   } catch (error) {
     console.error('Error creating hosted checkout session:', error)
-    res.status(400).json({ error: error instanceof Error ? error.message : 'Internal server error' })
+    
+    // Ensure we always return valid JSON
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error'
+    
+    res.status(400).json({ 
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? error : undefined
+    })
   }
 }
