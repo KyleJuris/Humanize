@@ -12,66 +12,62 @@ const PRICE_IDS = {
   ultra: 'price_1SAkpqIxRGF259ZEZoW96l7pPo5NkDfG2OiKCSYV0ieCIlObHJgVNnOg93EmPkYH4HzOm0M5q8Q8eEgVSO74gxkC00Hw38Q2yy' // Ultra $39.99/month - You'll need to create this in Stripe
 };
 
-// Create subscription
-router.post('/create-subscription', authenticateToken, async (req, res) => {
+// Create checkout session
+router.post('/create-checkout-session', authenticateToken, async (req, res) => {
   try {
-    const { priceId, paymentMethodId } = req.body;
+    const { priceId } = req.body;
     const userId = req.user.id;
     const userEmail = req.user.email;
 
-    console.log('Creating subscription for user:', userEmail, 'with price:', priceId);
+    console.log('Creating checkout session for user:', userEmail, 'with price:', priceId);
 
-    // Create or retrieve customer
-    let customer;
-    const existingCustomers = await stripe.customers.list({
-      email: userEmail,
-      limit: 1
-    });
-
-    if (existingCustomers.data.length > 0) {
-      customer = existingCustomers.data[0];
-      console.log('Found existing customer:', customer.id);
-    } else {
-      customer = await stripe.customers.create({
-        email: userEmail,
-        metadata: {
-          userId: userId
-        }
-      });
-      console.log('Created new customer:', customer.id);
-    }
-
-    // Attach payment method to customer
-    await stripe.paymentMethods.attach(paymentMethodId, {
-      customer: customer.id,
-    });
-
-    // Set as default payment method
-    await stripe.customers.update(customer.id, {
-      invoice_settings: {
-        default_payment_method: paymentMethodId,
+    const session = await stripe.checkout.sessions.create({
+      ui_mode: 'embedded',
+      line_items: [
+        {
+          price: priceId,
+          quantity: 1,
+        },
+      ],
+      mode: 'subscription',
+      return_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/pricing?session_id={CHECKOUT_SESSION_ID}`,
+      customer_email: userEmail,
+      metadata: {
+        userId: userId
       },
+      automatic_tax: { enabled: true },
     });
 
-    // Create subscription
-    const subscription = await stripe.subscriptions.create({
-      customer: customer.id,
-      items: [{ price: priceId }],
-      payment_behavior: 'default_incomplete',
-      payment_settings: { save_default_payment_method: 'on_subscription' },
-      expand: ['latest_invoice.payment_intent'],
-    });
-
-    console.log('Subscription created:', subscription.id);
+    console.log('Checkout session created:', session.id);
 
     res.json({
-      subscriptionId: subscription.id,
-      clientSecret: subscription.latest_invoice.payment_intent.client_secret,
-      status: subscription.status
+      clientSecret: session.client_secret
     });
 
   } catch (error) {
-    console.error('Error creating subscription:', error);
+    console.error('Error creating checkout session:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Get session status
+router.get('/session-status', async (req, res) => {
+  try {
+    const { session_id } = req.query;
+    
+    if (!session_id) {
+      return res.status(400).json({ error: 'Session ID is required' });
+    }
+
+    const session = await stripe.checkout.sessions.retrieve(session_id);
+
+    res.json({
+      status: session.status,
+      customer_email: session.customer_details?.email
+    });
+
+  } catch (error) {
+    console.error('Error retrieving session status:', error);
     res.status(400).json({ error: error.message });
   }
 });

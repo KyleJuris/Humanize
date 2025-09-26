@@ -1,10 +1,8 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import {
-  Elements,
-  CardElement,
-  useStripe,
-  useElements
+  EmbeddedCheckoutProvider,
+  EmbeddedCheckout
 } from '@stripe/react-stripe-js';
 import api from '../lib/api';
 
@@ -24,179 +22,107 @@ interface StripeCheckoutProps {
 }
 
 const CheckoutForm: React.FC<StripeCheckoutProps> = ({ planType, onSuccess, onError }) => {
-  const stripe = useStripe();
-  const elements = useElements();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-
-    if (!stripe || !elements) {
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
+  const fetchClientSecret = useCallback(async () => {
     try {
-      // Get the CardElement
-      const cardElement = elements.getElement(CardElement);
-      if (!cardElement) {
-        throw new Error('Card element not found');
-      }
-
-      // Create payment method
-      const { error: pmError, paymentMethod } = await stripe.createPaymentMethod({
-        type: 'card',
-        card: cardElement,
-      });
-
-      if (pmError) {
-        throw new Error(pmError.message || 'Failed to create payment method');
-      }
-
-      if (!paymentMethod) {
-        throw new Error('Payment method creation failed');
-      }
-
-      // Create subscription on backend
-      const response = await api.createSubscription({
-        priceId: PRICE_IDS[planType],
-        paymentMethodId: paymentMethod.id
-      });
-
+      setLoading(true);
+      setError(null);
+      
+      console.log('Creating checkout session for plan:', planType);
+      const response = await api.createCheckoutSession(PRICE_IDS[planType]);
+      
       if (response.error) {
         throw new Error(response.error);
       }
-
-      // Confirm payment
-      const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(
-        response.clientSecret
-      );
-
-      if (confirmError) {
-        throw new Error(confirmError.message || 'Payment confirmation failed');
-      }
-
-      if (paymentIntent.status === 'succeeded') {
-        onSuccess();
-      } else {
-        throw new Error('Payment was not successful');
-      }
-
+      
+      console.log('Checkout session created successfully');
+      return response.clientSecret;
+      
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create checkout session';
+      console.error('Error creating checkout session:', errorMessage);
       setError(errorMessage);
       onError(errorMessage);
+      throw err;
     } finally {
       setLoading(false);
     }
-  };
+  }, [planType, onError]);
 
-  const cardElementOptions = {
-    style: {
-      base: {
-        fontSize: '16px',
-        color: '#424770',
-        '::placeholder': {
-          color: '#aab7c4',
-        },
-      },
-      invalid: {
-        color: '#9e2146',
-      },
-    },
-  };
+  const options = { fetchClientSecret };
 
-  return (
-    <form onSubmit={handleSubmit} style={{ width: '100%' }}>
-      <div style={{ marginBottom: '1rem' }}>
-        <label style={{ 
-          display: 'block', 
-          fontSize: '0.9rem', 
-          fontWeight: '500', 
-          marginBottom: '0.5rem', 
-          color: '#374151' 
-        }}>
-          Card Details
-        </label>
+  if (loading) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: '2rem',
+        minHeight: '200px'
+      }}>
         <div style={{
-          padding: '0.75rem',
-          border: '1px solid #d1d5db',
-          borderRadius: '6px',
-          backgroundColor: 'white'
-        }}>
-          <CardElement options={cardElementOptions} />
-        </div>
+          width: '40px',
+          height: '40px',
+          border: '4px solid #e5e7eb',
+          borderTop: '4px solid #10b981',
+          borderRadius: '50%',
+          animation: 'spin 1s linear infinite'
+        }} />
+        <style jsx>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
       </div>
+    );
+  }
 
-      {error && (
-        <div style={{
-          color: '#ef4444',
-          fontSize: '0.9rem',
-          marginBottom: '1rem',
-          padding: '0.5rem',
-          backgroundColor: '#fef2f2',
-          border: '1px solid #fecaca',
-          borderRadius: '4px'
-        }}>
-          {error}
-        </div>
-      )}
+  if (error) {
+    return (
+      <div style={{
+        padding: '1rem',
+        backgroundColor: '#fef2f2',
+        border: '1px solid #fecaca',
+        borderRadius: '6px',
+        color: '#dc2626',
+        textAlign: 'center'
+      }}>
+        <p style={{ margin: 0 }}>{error}</p>
+        <button
+          onClick={() => {
+            setError(null);
+            setLoading(true);
+            fetchClientSecret();
+          }}
+          style={{
+            marginTop: '1rem',
+            backgroundColor: '#dc2626',
+            color: 'white',
+            border: 'none',
+            padding: '0.5rem 1rem',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
 
-      <button
-        type="submit"
-        disabled={!stripe || loading}
-        style={{
-          width: '100%',
-          backgroundColor: loading ? '#d1d5db' : '#10b981',
-          color: 'white',
-          border: 'none',
-          padding: '0.75rem 1rem',
-          borderRadius: '6px',
-          fontSize: '1rem',
-          fontWeight: '500',
-          cursor: loading ? 'not-allowed' : 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '0.5rem'
-        }}
-      >
-        {loading ? (
-          <>
-            <div style={{
-              width: '16px',
-              height: '16px',
-              border: '2px solid #ffffff',
-              borderTop: '2px solid transparent',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite'
-            }} />
-            Processing...
-          </>
-        ) : (
-          `Subscribe to ${planType.charAt(0).toUpperCase() + planType.slice(1)}`
-        )}
-      </button>
-
-      <style jsx>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
-    </form>
-  );
-};
-
-const StripeCheckout: React.FC<StripeCheckoutProps> = (props) => {
   return (
-    <Elements stripe={stripePromise}>
-      <CheckoutForm {...props} />
-    </Elements>
+    <div id="checkout" style={{ minHeight: '400px' }}>
+      <EmbeddedCheckoutProvider
+        stripe={stripePromise}
+        options={options}
+      >
+        <EmbeddedCheckout />
+      </EmbeddedCheckoutProvider>
+    </div>
   );
 };
 
-export default StripeCheckout;
+export default CheckoutForm;

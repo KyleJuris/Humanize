@@ -1,8 +1,9 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Head from 'next/head'
 import Header from '../components/Header'
 import StripeCheckout from '../components/StripeCheckout'
 import { useAuth } from '../contexts/AuthContext'
+import api from '../lib/api'
 
 export default function PricingPage() {
   const { user, isAuthenticated } = useAuth()
@@ -10,6 +11,8 @@ export default function PricingPage() {
   const [showCheckout, setShowCheckout] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<'pro' | 'ultra' | null>(null)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
+  const [paymentStatus, setPaymentStatus] = useState<'loading' | 'success' | 'error' | null>(null)
+  const [customerEmail, setCustomerEmail] = useState<string>('')
 
   const handleSubscribe = (plan: 'pro' | 'ultra') => {
     if (!isAuthenticated) {
@@ -32,6 +35,33 @@ export default function PricingPage() {
   const handleCheckoutError = (error: string) => {
     setCheckoutError(error)
   }
+
+  // Handle return from Stripe checkout
+  useEffect(() => {
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
+    const sessionId = urlParams.get('session_id');
+
+    if (sessionId) {
+      setPaymentStatus('loading');
+      
+      api.getSessionStatus(sessionId)
+        .then((data) => {
+          if (data.status === 'complete') {
+            setPaymentStatus('success');
+            setCustomerEmail(data.customer_email || '');
+            // Clear URL parameters
+            window.history.replaceState({}, document.title, '/pricing');
+          } else {
+            setPaymentStatus('error');
+          }
+        })
+        .catch((error) => {
+          console.error('Error checking session status:', error);
+          setPaymentStatus('error');
+        });
+    }
+  }, []);
 
   const plans = {
     basic: {
@@ -111,6 +141,45 @@ export default function PricingPage() {
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
       }}>
         <Header currentPage="pricing" />
+
+        {/* Payment Status Messages */}
+        {paymentStatus === 'success' && (
+          <div style={{
+            backgroundColor: '#d1fae5',
+            border: '1px solid #10b981',
+            borderRadius: '8px',
+            padding: '1rem 2rem',
+            margin: '2rem auto',
+            maxWidth: '1200px',
+            textAlign: 'center'
+          }}>
+            <h3 style={{ color: '#065f46', margin: '0 0 0.5rem 0' }}>
+              ✅ Payment Successful!
+            </h3>
+            <p style={{ color: '#065f46', margin: 0 }}>
+              Welcome to Humanizer Pro! A confirmation email will be sent to {customerEmail}.
+            </p>
+          </div>
+        )}
+
+        {paymentStatus === 'error' && (
+          <div style={{
+            backgroundColor: '#fef2f2',
+            border: '1px solid #ef4444',
+            borderRadius: '8px',
+            padding: '1rem 2rem',
+            margin: '2rem auto',
+            maxWidth: '1200px',
+            textAlign: 'center'
+          }}>
+            <h3 style={{ color: '#dc2626', margin: '0 0 0.5rem 0' }}>
+              ❌ Payment Failed
+            </h3>
+            <p style={{ color: '#dc2626', margin: 0 }}>
+              There was an issue processing your payment. Please try again.
+            </p>
+          </div>
+        )}
 
         {/* Main Content */}
         <main style={{ padding: '3rem 2rem', maxWidth: '1200px', margin: '0 auto' }}>

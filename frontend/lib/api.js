@@ -165,11 +165,15 @@ class ApiClient {
   }
 
   // Stripe subscription methods
-  async createSubscription(subscriptionData) {
-    return this.request('/stripe/create-subscription', {
+  async createCheckoutSession(priceId) {
+    return this.request('/stripe/create-checkout-session', {
       method: 'POST',
-      body: JSON.stringify(subscriptionData),
+      body: JSON.stringify({ priceId }),
     });
+  }
+
+  async getSessionStatus(sessionId) {
+    return this.request(`/stripe/session-status?session_id=${sessionId}`);
   }
 
   async getSubscriptionStatus() {
