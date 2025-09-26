@@ -210,65 +210,6 @@ router.post('/create-checkout-session', authenticateUser, async (req, res) => {
   }
 });
 
-// Stripe webhook handler
-router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
-  const sig = req.headers['stripe-signature'];
-  let event;
-
-  try {
-    const stripe = getStripe();
-    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
-  } catch (err) {
-    console.error(`Webhook Error: ${err.message}`);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
-
-  console.log(`Received webhook event: ${event.type}`);
-
-  try {
-    switch (event.type) {
-      case 'checkout.session.completed':
-        const session = event.data.object;
-        console.log(`Checkout session completed: ${session.id}`);
-        // TODO: Update user subscription status in database
-        await updateUserSubscriptionStatus(session.customer_email, 'active');
-        break;
-
-      case 'customer.subscription.updated':
-        const subscription = event.data.object;
-        console.log(`Customer subscription updated: ${subscription.id}`);
-        // TODO: Update user subscription status in database
-        await updateUserSubscriptionStatus(subscription.customer, subscription.status);
-        break;
-
-      case 'customer.subscription.deleted':
-        const deletedSubscription = event.data.object;
-        console.log(`Customer subscription deleted: ${deletedSubscription.id}`);
-        // TODO: Update user subscription status in database
-        await updateUserSubscriptionStatus(deletedSubscription.customer, 'cancelled');
-        break;
-
-      default:
-        console.log(`Unhandled event type ${event.type}`);
-    }
-
-    res.json({ received: true });
-  } catch (error) {
-    console.error('Error processing webhook:', error);
-    res.status(500).json({ error: 'Webhook processing failed' });
-  }
-});
-
-// Placeholder function to update user subscription status in database
-async function updateUserSubscriptionStatus(customerIdentifier, status) {
-  try {
-    console.log(`Updating subscription status for ${customerIdentifier} to ${status}`);
-    // TODO: Implement database update logic
-    // This would typically update a user's subscription status in your database
-    // based on the customer email or customer ID from Stripe
-  } catch (error) {
-    console.error('Error updating subscription status:', error);
-  }
-}
+// Webhook route is handled directly in server.js with raw body parsing
 
 module.exports = router;
