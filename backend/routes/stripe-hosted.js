@@ -5,6 +5,11 @@ const { getStripe } = require('../lib/stripe');
 // Middleware to authenticate user
 const authenticateUser = async (req, res, next) => {
   try {
+    // Always allow OPTIONS requests for CORS preflight
+    if (req.method === 'OPTIONS') {
+      return res.status(200).end();
+    }
+
     const token = req.headers.authorization?.replace('Bearer ', '');
     
     if (!token) {
