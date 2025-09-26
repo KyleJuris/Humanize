@@ -172,6 +172,13 @@ class ApiClient {
     });
   }
 
+  async createHostedCheckoutSession(priceId, customerEmail) {
+    return this.request('/stripe-hosted/create-checkout-session', {
+      method: 'POST',
+      body: JSON.stringify({ priceId, customerEmail }),
+    });
+  }
+
   async getSessionStatus(sessionId) {
     return this.request(`/stripe/session-status?session_id=${sessionId}`);
   }

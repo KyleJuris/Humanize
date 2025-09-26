@@ -1,16 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import Head from 'next/head'
 import Header from '../components/Header'
-import StripeCheckout from '../components/StripeCheckout'
+import SubscribeButton from '../components/SubscribeButton'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../lib/api'
 
 export default function PricingPage() {
   const { user, isAuthenticated } = useAuth()
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual')
-  const [showCheckout, setShowCheckout] = useState(false)
-  const [selectedPlan, setSelectedPlan] = useState<'pro' | 'ultra' | null>(null)
-  const [checkoutError, setCheckoutError] = useState<string | null>(null)
   const [paymentStatus, setPaymentStatus] = useState<'loading' | 'success' | 'error' | null>(null)
   const [customerEmail, setCustomerEmail] = useState<string>('')
 
@@ -20,21 +17,9 @@ export default function PricingPage() {
       window.location.href = '/auth'
       return
     }
-    setSelectedPlan(plan)
-    setShowCheckout(true)
-    setCheckoutError(null)
+    // The SubscribeButton component will handle the rest
   }
 
-  const handleCheckoutSuccess = () => {
-    setShowCheckout(false)
-    setSelectedPlan(null)
-    // Redirect to dashboard or show success message
-    window.location.href = '/dashboard/humanizer'
-  }
-
-  const handleCheckoutError = (error: string) => {
-    setCheckoutError(error)
-  }
 
   // Handle return from Stripe checkout
   useEffect(() => {
@@ -437,8 +422,9 @@ export default function PricingPage() {
                 ))}
               </ul>
               
-              <button 
-                onClick={() => handleSubscribe('pro')}
+              <SubscribeButton
+                priceId="price_1SAkpqIxRGF259ZEZoW96l7pPo5NkDfG2OiKCSYV0ieCIlObHJgVNnOg93EmPkYH4HzOm0M5q8Q8eEgVSO74gxkC00Hw38Q2yy"
+                planName="Pro"
                 style={{
                   width: '100%',
                   backgroundColor: '#10b981',
@@ -453,7 +439,7 @@ export default function PricingPage() {
                 }}
               >
                 Subscribe
-              </button>
+              </SubscribeButton>
             </div>
 
             {/* Ultra Plan */}
@@ -528,8 +514,9 @@ export default function PricingPage() {
                 ))}
               </ul>
               
-              <button 
-                onClick={() => handleSubscribe('ultra')}
+              <SubscribeButton
+                priceId="price_1SAkpqIxRGF259ZEZoW96l7pPo5NkDfG2OiKCSYV0ieCIlObHJgVNnOg93EmPkYH4HzOm0M5q8Q8eEgVSO74gxkC00Hw38Q2yy"
+                planName="Ultra"
                 style={{
                   width: '100%',
                   backgroundColor: '#10b981',
@@ -544,7 +531,7 @@ export default function PricingPage() {
                 }}
               >
                 Subscribe
-              </button>
+              </SubscribeButton>
             </div>
           </div>
 
@@ -691,79 +678,6 @@ export default function PricingPage() {
           </div>
         </main>
 
-        {/* Checkout Modal */}
-        {showCheckout && selectedPlan && (
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '2rem'
-          }}>
-            <div style={{
-              backgroundColor: 'white',
-              borderRadius: '12px',
-              padding: '2rem',
-              maxWidth: '500px',
-              width: '100%',
-              maxHeight: '90vh',
-              overflow: 'auto'
-            }}>
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '1.5rem'
-              }}>
-                <h3 style={{
-                  fontSize: '1.5rem',
-                  fontWeight: '600',
-                  color: '#1f2937',
-                  margin: 0
-                }}>
-                  Subscribe to {selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1)}
-                </h3>
-                <button
-                  onClick={() => setShowCheckout(false)}
-                  style={{
-                    backgroundColor: 'transparent',
-                    border: 'none',
-                    fontSize: '1.5rem',
-                    cursor: 'pointer',
-                    color: '#6b7280'
-                  }}
-                >
-                  ×
-                </button>
-              </div>
-
-              {checkoutError && (
-                <div style={{
-                  backgroundColor: '#fef2f2',
-                  border: '1px solid #fecaca',
-                  borderRadius: '6px',
-                  padding: '1rem',
-                  marginBottom: '1rem',
-                  color: '#dc2626'
-                }}>
-                  {checkoutError}
-                </div>
-              )}
-
-              <StripeCheckout
-                planType={selectedPlan}
-                onSuccess={handleCheckoutSuccess}
-                onError={handleCheckoutError}
-              />
-            </div>
-          </div>
-        )}
       </div>
     </>
   )
