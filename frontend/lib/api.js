@@ -228,20 +228,33 @@ class ApiClient {
         ok: response.ok
       });
       
-      const data = await response.json();
-      console.log('📄 Stripe API Data:', data);
-
+      // Handle non-OK responses gracefully
       if (!response.ok) {
+        // Read response as text first to avoid JSON parsing errors
+        const responseText = await response.text();
         console.error('❌ Stripe API Request Failed:', {
           url,
           status: response.status,
           statusText: response.statusText,
-          error: data.error || `Request failed with status ${response.status}`
+          responseText
         });
-        throw new Error(data.error || `Request failed with status ${response.status}`);
+        
+        // Try to parse as JSON, but don't fail if it's not valid JSON
+        let errorData;
+        try {
+          errorData = JSON.parse(responseText);
+        } catch (jsonError) {
+          errorData = { error: responseText || `Request failed with status ${response.status}` };
+        }
+        
+        throw new Error(errorData.error || `Request failed with status ${response.status}`);
       }
-
+      
+      // Parse JSON response for successful requests
+      const data = await response.json();
+      console.log('📄 Stripe API Data:', data);
       return data;
+      
     } catch (error) {
       console.error('💥 Stripe API request failed:', {
         url,
