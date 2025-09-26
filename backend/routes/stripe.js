@@ -1,7 +1,30 @@
 const express = require('express');
 const router = express.Router();
 const Stripe = require('stripe');
-const { authenticateToken } = require('../middleware/auth');
+const { supabaseAnon } = require('../config/database');
+
+// Middleware to authenticate user
+const authenticateUser = async (req, res, next) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+    const { data: { user }, error } = await supabaseAnon.auth.getUser(token);
+
+    if (error) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    req.user = user;
+    next();
+  } catch (error) {
+    console.error('Authentication error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
 
 // Initialize Stripe with secret key
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
@@ -13,7 +36,7 @@ const PRICE_IDS = {
 };
 
 // Create checkout session
-router.post('/create-checkout-session', authenticateToken, async (req, res) => {
+router.post('/create-checkout-session', authenticateUser, async (req, res) => {
   try {
     const { priceId } = req.body;
     const userId = req.user.id;
@@ -73,7 +96,7 @@ router.get('/session-status', async (req, res) => {
 });
 
 // Get subscription status
-router.get('/subscription-status', authenticateToken, async (req, res) => {
+router.get('/subscription-status', authenticateUser, async (req, res) => {
   try {
     const userId = req.user.id;
     const userEmail = req.user.email;
@@ -122,7 +145,7 @@ router.get('/subscription-status', authenticateToken, async (req, res) => {
 });
 
 // Cancel subscription
-router.post('/cancel-subscription', authenticateToken, async (req, res) => {
+router.post('/cancel-subscription', authenticateUser, async (req, res) => {
   try {
     const userId = req.user.id;
     const userEmail = req.user.email;

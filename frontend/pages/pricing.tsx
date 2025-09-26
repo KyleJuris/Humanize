@@ -200,8 +200,7 @@ export default function PricingPage() {
             justifyContent: 'center',
             alignItems: 'center',
             gap: '1rem',
-            marginBottom: '3rem',
-            position: 'relative'
+            marginBottom: '3rem'
           }}>
             <span style={{
               color: billingCycle === 'monthly' ? '#1f2937' : '#6b7280',
@@ -248,10 +247,6 @@ export default function PricingPage() {
               borderRadius: '4px',
               fontSize: '0.8rem',
               fontWeight: '600',
-              position: 'absolute',
-              right: '-80px',
-              top: '50%',
-              transform: 'translateY(-50%)',
               whiteSpace: 'nowrap'
             }}>
               SAVE 50%
@@ -338,7 +333,6 @@ export default function PricingPage() {
               </ul>
               
               <div style={{
-                width: '100%',
                 backgroundColor: '#f3f4f6',
                 color: '#6b7280',
                 border: '1px solid #d1d5db',
@@ -347,7 +341,8 @@ export default function PricingPage() {
                 fontSize: '1rem',
                 fontWeight: '600',
                 textAlign: 'center',
-                marginTop: 'auto'
+                marginTop: 'auto',
+                boxSizing: 'border-box'
               }}>
                 Free
               </div>

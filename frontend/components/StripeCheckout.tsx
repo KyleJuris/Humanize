@@ -7,7 +7,14 @@ import {
 import api from '../lib/api';
 
 // Initialize Stripe with publishable key
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+console.log('Stripe publishable key:', stripePublishableKey ? 'Present' : 'Missing');
+
+if (!stripePublishableKey) {
+  console.error('❌ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not set!');
+}
+
+const stripePromise = loadStripe(stripePublishableKey!);
 
 // Stripe price IDs
 const PRICE_IDS = {
@@ -25,16 +32,40 @@ const CheckoutForm: React.FC<StripeCheckoutProps> = ({ planType, onSuccess, onEr
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Check if Stripe key is available
+  if (!stripePublishableKey) {
+    return (
+      <div style={{
+        padding: '1rem',
+        backgroundColor: '#fef2f2',
+        border: '1px solid #fecaca',
+        borderRadius: '6px',
+        color: '#dc2626',
+        textAlign: 'center'
+      }}>
+        <p style={{ margin: 0 }}>Stripe configuration error. Please contact support.</p>
+      </div>
+    );
+  }
+
   const fetchClientSecret = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       
       console.log('Creating checkout session for plan:', planType);
+      console.log('Using price ID:', PRICE_IDS[planType]);
+      
       const response = await api.createCheckoutSession(PRICE_IDS[planType]);
+      
+      console.log('API response:', response);
       
       if (response.error) {
         throw new Error(response.error);
+      }
+      
+      if (!response.clientSecret) {
+        throw new Error('No client secret received from server');
       }
       
       console.log('Checkout session created successfully');
@@ -43,6 +74,7 @@ const CheckoutForm: React.FC<StripeCheckoutProps> = ({ planType, onSuccess, onEr
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create checkout session';
       console.error('Error creating checkout session:', errorMessage);
+      console.error('Full error:', err);
       setError(errorMessage);
       onError(errorMessage);
       throw err;
