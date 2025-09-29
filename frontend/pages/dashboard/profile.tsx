@@ -1,9 +1,42 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import Head from 'next/head'
 import Header from '../../components/Header'
 import ProtectedRoute from '../../components/ProtectedRoute'
+import { useAuth } from '../../contexts/AuthContext'
+import api from '../../lib/api'
 
 export default function ProfilePage() {
+  const { user, isAuthenticated } = useAuth()
+  const [profile, setProfile] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [wordLimits, setWordLimits] = useState({ monthly: 5000 })
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      fetchProfile()
+    }
+  }, [isAuthenticated, user])
+
+  const fetchProfile = async () => {
+    try {
+      const profileData = await api.getProfile()
+      setProfile(profileData)
+      
+      // Set word limits based on plan
+      const limits = {
+        free: { monthly: 5000 },
+        pro: { monthly: 15000 },
+        ultra: { monthly: 30000 }
+      }
+      
+      const planLimits = limits[profileData.plan] || limits.free
+      setWordLimits(planLimits)
+    } catch (error) {
+      console.error('Error fetching profile:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
   return (
     <>
       <Head>
@@ -78,7 +111,7 @@ export default function ProfilePage() {
                   fontWeight: 'bold',
                   margin: '0 auto 1rem'
                 }}>
-                  K
+                  {profile?.user_name ? profile.user_name.charAt(0).toUpperCase() : user?.email?.charAt(0).toUpperCase() || 'U'}
                 </div>
                 <button style={{
                   backgroundColor: '#f3f4f6',
@@ -101,7 +134,7 @@ export default function ProfilePage() {
                   </label>
                   <input
                     type="text"
-                    defaultValue="John Doe"
+                    defaultValue={profile?.user_name || ''}
                     style={{
                       width: '100%',
                       border: '1px solid #d1d5db',
@@ -119,7 +152,7 @@ export default function ProfilePage() {
                   </label>
                   <input
                     type="email"
-                    defaultValue="john@example.com"
+                    defaultValue={profile?.email || user?.email || ''}
                     style={{
                       width: '100%',
                       border: '1px solid #d1d5db',
@@ -192,10 +225,16 @@ export default function ProfilePage() {
                   marginBottom: '1rem'
                 }}>
                   <div>
-                    <div style={{ fontWeight: '500', color: '#1f2937' }}>Pro Plan</div>
-                    <div style={{ color: '#6b7280', fontSize: '0.9rem' }}>50,000 words/month</div>
+                    <div style={{ fontWeight: '500', color: '#1f2937' }}>
+                      {profile?.plan ? profile.plan.charAt(0).toUpperCase() + profile.plan.slice(1) : 'Free'} Plan
+                    </div>
+                    <div style={{ color: '#6b7280', fontSize: '0.9rem' }}>
+                      {wordLimits.monthly.toLocaleString()} words/month
+                    </div>
                   </div>
-                  <div style={{ fontWeight: '600', color: '#10b981' }}>$19/month</div>
+                  <div style={{ fontWeight: '600', color: '#10b981' }}>
+                    {profile?.plan === 'free' ? 'Free' : profile?.plan === 'pro' ? '$19/month' : profile?.plan === 'ultra' ? '$39/month' : 'Free'}
+                  </div>
                 </div>
                 
                 <div style={{
@@ -208,7 +247,7 @@ export default function ProfilePage() {
                     Words Used This Month
                   </div>
                   <div style={{ fontSize: '1.5rem', fontWeight: '600', color: '#1f2937' }}>
-                    12,450 / 50,000
+                    {loading ? 'Loading...' : `${(profile?.words_used_this_month || 0).toLocaleString()} / ${wordLimits.monthly.toLocaleString()}`}
                   </div>
                   <div style={{
                     width: '100%',
@@ -219,9 +258,9 @@ export default function ProfilePage() {
                     overflow: 'hidden'
                   }}>
                     <div style={{
-                      width: '25%',
+                      width: `${loading ? '0' : Math.min(((profile?.words_used_this_month || 0) / wordLimits.monthly) * 100, 100)}%`,
                       height: '100%',
-                      backgroundColor: '#10b981',
+                      backgroundColor: ((profile?.words_used_this_month || 0) / wordLimits.monthly) > 0.8 ? '#ef4444' : '#10b981',
                       borderRadius: '4px'
                     }}></div>
                   </div>
@@ -292,23 +331,6 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 
-                <div>
-                  <div style={{ fontWeight: '500', color: '#1f2937', marginBottom: '0.5rem' }}>
-                    API Keys
-                  </div>
-                  <button style={{
-                    backgroundColor: '#f3f4f6',
-                    color: '#374151',
-                    border: 'none',
-                    padding: '0.5rem 1rem',
-                    borderRadius: '6px',
-                    fontSize: '0.9rem',
-                    fontWeight: '500',
-                    cursor: 'pointer'
-                  }}>
-                    Manage API Keys
-                  </button>
-                </div>
               </div>
             </div>
           </div>

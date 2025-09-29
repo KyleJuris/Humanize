@@ -92,7 +92,10 @@ router.post('/', authenticateUser, async (req, res) => {
         email: req.user.email,
         user_name: user_name || '',
         avatar_url: avatar_url || null,
-        plan: plan || 'free'
+        plan: plan || 'free',
+        words_used_this_month: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       })
       .select()
       .single();
