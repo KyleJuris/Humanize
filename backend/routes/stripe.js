@@ -333,7 +333,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
               stripe_subscription_id: session.subscription,
               updated_at: new Date().toISOString()
             })
-            .eq('id', userId);
+            .eq('user_id', userId);
             
           if (updateError) {
             console.error('Error updating user subscription:', updateError);
