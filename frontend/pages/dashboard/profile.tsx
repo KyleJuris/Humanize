@@ -10,16 +10,22 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [wordLimits, setWordLimits] = useState({ monthly: 5000 })
+  const [fetchingProfile, setFetchingProfile] = useState(false)
 
   useEffect(() => {
-    if (isAuthenticated && user?.id) {
+    if (isAuthenticated && user && !fetchingProfile) {
       fetchProfile()
     }
-  }, [isAuthenticated, user?.id])
+  }, [isAuthenticated, user])
 
   const fetchProfile = async () => {
+    if (fetchingProfile) return // Prevent multiple simultaneous calls
+    
     try {
+      setFetchingProfile(true)
+      console.log('🔍 Fetching user profile...')
       const profileData = await api.getProfile()
+      console.log('✅ Profile data received:', profileData)
       setProfile(profileData)
       
       // Set word limits based on plan
@@ -32,9 +38,10 @@ export default function ProfilePage() {
       const planLimits = limits[profileData.plan] || limits.free
       setWordLimits(planLimits)
     } catch (error) {
-      console.error('Error fetching profile:', error)
+      console.error('❌ Error fetching profile:', error)
     } finally {
       setLoading(false)
+      setFetchingProfile(false)
     }
   }
   return (

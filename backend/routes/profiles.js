@@ -35,7 +35,36 @@ router.get('/', authenticateUser, async (req, res) => {
       .single();
 
     if (error) {
-      return res.status(404).json({ error: 'Profile not found' });
+      if (error.code === 'PGRST116') {
+        // Profile doesn't exist, create one
+        console.log('📝 Creating new profile for user:', req.user.email);
+        
+        const { data: newProfile, error: createError } = await supabase
+          .from('profiles')
+          .insert({
+            user_id: req.user.id,
+            email: req.user.email,
+            user_name: req.user.user_metadata?.full_name || '',
+            avatar_url: req.user.user_metadata?.avatar_url || null,
+            plan: 'free',
+            words_used_this_month: 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('Profile creation error:', createError);
+          return res.status(500).json({ error: 'Failed to create profile' });
+        }
+
+        console.log('✅ Profile created successfully');
+        return res.json(newProfile);
+      } else {
+        console.error('Profile fetch error:', error);
+        return res.status(500).json({ error: 'Failed to fetch profile' });
+      }
     }
 
     res.json(data);
