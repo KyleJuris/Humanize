@@ -61,8 +61,7 @@ export default function PricingPage() {
         'Plagiarism-free',
         'Error-free rewriting',
         'Undetectable results',
-        'Unlimited AI detection',
-        '20 languages supported'
+        'Unlimited AI detection'
       ]
     },
     pro: {
@@ -79,7 +78,6 @@ export default function PricingPage() {
         'Error-free rewriting',
         'Undetectable results',
         'Unlimited AI detection',
-        '50+ languages supported',
         'Advanced Turnitin Bypass Engine',
         'Human-like results',
         'Unlimited grammar checks',
@@ -100,7 +98,6 @@ export default function PricingPage() {
         'Error-free rewriting',
         'Undetectable results',
         'Unlimited AI detection',
-        '50+ languages supported',
         'Advanced Turnitin Bypass Engine',
         'Human-like results',
         'Unlimited grammar checks',

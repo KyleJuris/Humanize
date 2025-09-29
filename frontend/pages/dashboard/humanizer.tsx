@@ -18,16 +18,20 @@ export default function HumanizerPage() {
   const [projects, setProjects] = useState([])
   const [selectedProject, setSelectedProject] = useState(null)
   const [selectedProjectData, setSelectedProjectData] = useState(null)
-  const [editingProject, setEditingProject] = useState<number | null>(null)
+  const [editingProject, setEditingProject] = useState<string | null>(null)
   const [filterCategory, setFilterCategory] = useState('all')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null)
   const [loadingProjects, setLoadingProjects] = useState(false)
   const [previousOutputs, setPreviousOutputs] = useState([])
+  const [userProfile, setUserProfile] = useState(null)
+  const [wordLimits, setWordLimits] = useState({ perRequest: 500, monthly: 5000 })
+  const [monthlyUsage, setMonthlyUsage] = useState(0)
 
-  // Fetch user projects on component mount and when user changes
+  // Fetch user projects and profile on component mount and when user changes
   useEffect(() => {
     if (isAuthenticated && user) {
       fetchProjects()
+      fetchUserProfile()
     }
   }, [isAuthenticated, user])
 
@@ -42,6 +46,27 @@ export default function HumanizerPage() {
       setProjects([])
     } finally {
       setLoadingProjects(false)
+    }
+  }
+
+  const fetchUserProfile = async () => {
+    try {
+      const profile = await api.getProfile()
+      setUserProfile(profile)
+      
+      // Set word limits based on plan
+      const limits = {
+        free: { perRequest: 500, monthly: 5000 },
+        pro: { perRequest: 1500, monthly: 15000 },
+        ultra: { perRequest: 3000, monthly: 30000 }
+      }
+      
+      const planLimits = limits[profile.plan] || limits.free
+      setWordLimits(planLimits)
+      setMonthlyUsage(profile.words_used_this_month || 0)
+    } catch (error) {
+      console.error('Error fetching user profile:', error)
+      // Use default limits if profile fetch fails
     }
   }
 
@@ -113,9 +138,14 @@ export default function HumanizerPage() {
       console.log('✅ Humanization successful:', response)
       setOutputText(response.humanizedText)
       
+      // Update monthly usage from response
+      if (response.monthlyUsage !== undefined) {
+        setMonthlyUsage(response.monthlyUsage)
+      }
+      
       // Add to previous outputs
       const newOutput = {
-        id: Date.now(),
+        id: `output_${Date.now()}`,
         text: response.humanizedText,
         timestamp: new Date().toISOString(),
         settings: { intensity, tone }
@@ -150,6 +180,8 @@ export default function HumanizerPage() {
         setOutputText('OpenAI API quota exceeded. Please try again later.')
       } else if (error.message.includes('API key')) {
         setOutputText('OpenAI API key is invalid. Please contact support.')
+      } else if (error.message.includes('exceeds') || error.message.includes('limit')) {
+        setOutputText(`❌ ${error.message}`)
       } else {
         setOutputText('Failed to humanize text. Please try again.')
       }
@@ -185,39 +217,31 @@ export default function HumanizerPage() {
       setSelectedProjectData(response.project)
     } catch (error) {
       console.error('Error creating project:', error)
-      // Fallback to local state if API fails
-      const newProject = {
-        id: Date.now(),
-        title: `Project ${projects.length + 1}`,
-        created_at: new Date().toISOString(),
-        category: 'general'
-      }
-      setProjects([newProject, ...projects])
+      // Don't create fallback project - let user retry
+      alert('Failed to create project. Please try again.')
     }
   }
 
-  const handleRenameProject = async (id: number, newName: string) => {
+  const handleRenameProject = async (id: string, newName: string) => {
     try {
       await api.updateProject(id, { title: newName })
       setProjects(projects.map(p => p.id === id ? { ...p, title: newName } : p))
       setEditingProject(null)
     } catch (error) {
       console.error('Error renaming project:', error)
-      // Fallback to local state if API fails
-      setProjects(projects.map(p => p.id === id ? { ...p, title: newName } : p))
+      alert('Failed to rename project. Please try again.')
       setEditingProject(null)
     }
   }
 
-  const handleDeleteProject = async (id: number) => {
+  const handleDeleteProject = async (id: string) => {
     try {
       await api.deleteProject(id)
       setProjects(projects.filter(p => p.id !== id))
       setShowDeleteConfirm(null)
     } catch (error) {
       console.error('Error deleting project:', error)
-      // Fallback to local state if API fails
-      setProjects(projects.filter(p => p.id !== id))
+      alert('Failed to delete project. Please try again.')
       setShowDeleteConfirm(null)
     }
   }
@@ -636,9 +660,18 @@ export default function HumanizerPage() {
                 alignItems: 'center',
                 marginBottom: '2rem'
               }}>
-                <span style={{ color: '#9ca3af', fontSize: '0.9rem' }}>
-                  {wordCount} / 500 words
-                </span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                  <span style={{ 
+                    color: wordCount > wordLimits.perRequest ? '#ef4444' : '#9ca3af', 
+                    fontSize: '0.9rem',
+                    fontWeight: wordCount > wordLimits.perRequest ? '600' : 'normal'
+                  }}>
+                    {wordCount} / {wordLimits.perRequest} words per request
+                  </span>
+                  <span style={{ color: '#6b7280', fontSize: '0.8rem' }}>
+                    Monthly usage: {monthlyUsage} / {wordLimits.monthly} words
+                  </span>
+                </div>
                 <div style={{ display: 'flex', gap: '1rem' }}>
                   <button style={{
                     backgroundColor: '#f3f4f6',
@@ -657,16 +690,16 @@ export default function HumanizerPage() {
                   </button>
                   <button
                     onClick={handleHumanize}
-                    disabled={!inputText.trim() || isProcessing}
+                    disabled={!inputText.trim() || isProcessing || wordCount > wordLimits.perRequest || monthlyUsage + wordCount > wordLimits.monthly}
                     style={{
-                      backgroundColor: inputText.trim() ? '#10b981' : '#d1d5db',
+                      backgroundColor: (!inputText.trim() || isProcessing || wordCount > wordLimits.perRequest || monthlyUsage + wordCount > wordLimits.monthly) ? '#d1d5db' : '#10b981',
                       color: 'white',
                       border: 'none',
                       padding: '0.75rem 1.5rem',
                       borderRadius: '8px',
                       fontSize: '0.95rem',
                       fontWeight: '500',
-                      cursor: inputText.trim() ? 'pointer' : 'not-allowed',
+                      cursor: (!inputText.trim() || isProcessing || wordCount > wordLimits.perRequest || monthlyUsage + wordCount > wordLimits.monthly) ? 'not-allowed' : 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '0.5rem'

@@ -48,16 +48,23 @@ router.get('/', authenticateUser, async (req, res) => {
 // Update user profile
 router.put('/', authenticateUser, async (req, res) => {
   try {
-    const { user_name, avatar_url, plan } = req.body;
+    const { user_name, avatar_url, plan, words_used_this_month } = req.body;
+
+    const updateData = {
+      user_name,
+      avatar_url,
+      plan,
+      updated_at: new Date().toISOString()
+    };
+
+    // Only update words_used_this_month if provided
+    if (words_used_this_month !== undefined) {
+      updateData.words_used_this_month = words_used_this_month;
+    }
 
     const { data, error } = await supabase
       .from('profiles')
-      .update({
-        user_name,
-        avatar_url,
-        plan,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('user_id', req.user.id)
       .select()
       .single();

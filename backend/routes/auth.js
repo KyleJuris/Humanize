@@ -108,7 +108,7 @@ router.get('/me', async (req, res) => {
     console.log('✅ Token validated for user:', user.email);
 
     // Get user profile using the service role client (for admin access)
-    const { data: profile, error: profileError } = await supabase
+    let { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('*')
       .eq('user_id', user.id)
@@ -116,6 +116,34 @@ router.get('/me', async (req, res) => {
 
     if (profileError && profileError.code !== 'PGRST116') {
       console.error('Profile fetch error:', profileError);
+    }
+
+    // If profile doesn't exist, create one
+    if (profileError && profileError.code === 'PGRST116') {
+      console.log('📝 Creating new profile for user:', user.email);
+      
+      const { data: newProfile, error: createError } = await supabase
+        .from('profiles')
+        .insert({
+          user_id: user.id,
+          email: user.email,
+          user_name: user.user_metadata?.full_name || '',
+          avatar_url: user.user_metadata?.avatar_url || null,
+          plan: 'free',
+          words_used_this_month: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (createError) {
+        console.error('Profile creation error:', createError);
+        // Continue without profile if creation fails
+      } else {
+        console.log('✅ Profile created successfully');
+        profile = newProfile;
+      }
     }
 
     res.json({ 

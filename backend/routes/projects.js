@@ -172,9 +172,56 @@ router.post('/humanize', authenticateUser, async (req, res) => {
       return res.status(400).json({ error: 'Text is required' });
     }
 
+    // Count words in input text
+    const wordCount = text.trim().split(/\s+/).filter(word => word.length > 0).length;
+
+    // Get user profile to check limits
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('plan, words_used_this_month')
+      .eq('user_id', req.user.id)
+      .single();
+
+    if (profileError) {
+      console.error('Profile fetch error:', profileError);
+      return res.status(500).json({ error: 'Failed to fetch user profile' });
+    }
+
+    // Define word limits based on plan
+    const wordLimits = {
+      free: { perRequest: 500, monthly: 5000 },
+      pro: { perRequest: 1500, monthly: 15000 },
+      ultra: { perRequest: 3000, monthly: 30000 }
+    };
+
+    const limits = wordLimits[profile.plan] || wordLimits.free;
+    const currentUsage = profile.words_used_this_month || 0;
+
+    // Check per-request limit
+    if (wordCount > limits.perRequest) {
+      return res.status(400).json({ 
+        error: `Text exceeds ${limits.perRequest} words per request limit for ${profile.plan} plan`,
+        limit: limits.perRequest,
+        current: wordCount
+      });
+    }
+
+    // Check monthly limit
+    if (currentUsage + wordCount > limits.monthly) {
+      return res.status(400).json({ 
+        error: `Monthly word limit exceeded. You have ${limits.monthly - currentUsage} words remaining`,
+        limit: limits.monthly,
+        current: currentUsage,
+        requested: wordCount
+      });
+    }
+
     console.log('🤖 Humanizing text with OpenAI...');
     console.log('📝 Text length:', text.length);
+    console.log('📊 Word count:', wordCount);
     console.log('🎛️ Settings:', { intensity, tone });
+    console.log('👤 User plan:', profile.plan);
+    console.log('📈 Current usage:', currentUsage, '/', limits.monthly);
 
     // Create the prompt based on settings
     const prompt = createHumanizationPrompt(text, intensity, tone);
@@ -202,7 +249,15 @@ router.post('/humanize', authenticateUser, async (req, res) => {
       throw new Error('No response from OpenAI');
     }
 
+    // Update word usage in profile
+    const newUsage = currentUsage + wordCount;
+    await supabase
+      .from('profiles')
+      .update({ words_used_this_month: newUsage })
+      .eq('user_id', req.user.id);
+
     console.log('✅ Text humanized successfully');
+    console.log('📊 Updated usage:', newUsage, '/', limits.monthly);
 
     res.json({
       humanizedText,
@@ -210,7 +265,11 @@ router.post('/humanize', authenticateUser, async (req, res) => {
       intensity,
       tone,
       timestamp: new Date().toISOString(),
-      usage: completion.usage
+      usage: completion.usage,
+      wordCount,
+      monthlyUsage: newUsage,
+      monthlyLimit: limits.monthly,
+      plan: profile.plan
     });
 
   } catch (error) {
