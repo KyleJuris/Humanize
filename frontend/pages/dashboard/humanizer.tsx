@@ -29,11 +29,11 @@ export default function HumanizerPage() {
 
   // Fetch user projects and profile on component mount and when user changes
   useEffect(() => {
-    if (isAuthenticated && user) {
+    if (isAuthenticated && user?.id) {
       fetchProjects()
       fetchUserProfile()
     }
-  }, [isAuthenticated, user])
+  }, [isAuthenticated, user?.id])
 
   const fetchProjects = async () => {
     try {

@@ -12,10 +12,10 @@ export default function ProfilePage() {
   const [wordLimits, setWordLimits] = useState({ monthly: 5000 })
 
   useEffect(() => {
-    if (isAuthenticated && user) {
+    if (isAuthenticated && user?.id) {
       fetchProfile()
     }
-  }, [isAuthenticated, user])
+  }, [isAuthenticated, user?.id])
 
   const fetchProfile = async () => {
     try {

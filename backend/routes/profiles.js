@@ -1,5 +1,5 @@
 const express = require('express');
-const supabase = require('../config/database');
+const { supabase, supabaseAnon } = require('../config/database');
 const router = express.Router();
 
 // Middleware to authenticate user
@@ -11,7 +11,7 @@ const authenticateUser = async (req, res, next) => {
       return res.status(401).json({ error: 'No token provided' });
     }
 
-    const { data: { user }, error } = await supabase.auth.getUser(token);
+    const { data: { user }, error } = await supabaseAnon.auth.getUser(token);
 
     if (error) {
       return res.status(401).json({ error: 'Invalid token' });
