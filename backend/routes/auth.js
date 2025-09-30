@@ -142,7 +142,13 @@ router.get('/me', async (req, res) => {
         .single();
 
       if (createError) {
-        console.error('Profile creation error:', createError);
+        console.error('❌ Profile creation error (auth):', createError);
+        console.error('❌ Error details:', {
+          code: createError.code,
+          message: createError.message,
+          details: createError.details,
+          hint: createError.hint
+        });
         // Continue without profile if creation fails
       } else {
         console.log('✅ Profile created successfully');
