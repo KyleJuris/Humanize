@@ -65,8 +65,37 @@ export default function HumanizerPage() {
       setWordLimits(planLimits)
       setMonthlyUsage(profile.words_used_this_month || 0)
     } catch (error) {
-      console.error('Error fetching user profile:', error)
+      console.error('❌ Error fetching user profile:', error)
+      
+      // If profile doesn't exist, try to create it by calling getCurrentUser
+      if (error.message.includes('profile') || error.message.includes('PROFILE')) {
+        console.log('🔄 Attempting to create profile by calling getCurrentUser...')
+        try {
+          const userData = await api.getCurrentUser()
+          if (userData && userData.user) {
+            console.log('✅ Profile created successfully via getCurrentUser')
+            // Retry fetching profile
+            const profile = await api.getProfile()
+            setUserProfile(profile)
+            
+            const limits = {
+              free: { perRequest: 500, monthly: 5000 },
+              pro: { perRequest: 1500, monthly: 15000 },
+              ultra: { perRequest: 3000, monthly: 30000 }
+            }
+            
+            const planLimits = limits[profile.plan] || limits.free
+            setWordLimits(planLimits)
+            setMonthlyUsage(profile.words_used_this_month || 0)
+            return
+          }
+        } catch (createError) {
+          console.error('❌ Failed to create profile:', createError)
+        }
+      }
+      
       // Use default limits if profile fetch fails
+      console.log('⚠️ Using default limits due to profile fetch failure')
     }
   }
 
@@ -182,8 +211,14 @@ export default function HumanizerPage() {
         setOutputText('OpenAI API key is invalid. Please contact support.')
       } else if (error.message.includes('exceeds') || error.message.includes('limit')) {
         setOutputText(`❌ ${error.message}`)
+      } else if (error.message.includes('profile not found') || error.message.includes('PROFILE_NOT_FOUND')) {
+        setOutputText('❌ User profile not found. Please refresh the page to create your profile.')
+        // Automatically refresh the page after 3 seconds
+        setTimeout(() => {
+          window.location.reload()
+        }, 3000)
       } else {
-        setOutputText('Failed to humanize text. Please try again.')
+        setOutputText(`❌ Error: ${error.message}`)
       }
     } finally {
       setIsProcessing(false)

@@ -138,12 +138,22 @@ router.get('/me', async (req, res) => {
         .single();
 
       if (createError) {
-        console.error('Profile creation error:', createError);
-        // Continue without profile if creation fails
+        console.error('❌ Profile creation error:', createError);
+        // Return error instead of continuing without profile
+        return res.status(500).json({ 
+          error: 'Failed to create user profile',
+          details: createError.message 
+        });
       } else {
-        console.log('✅ Profile created successfully');
+        console.log('✅ Profile created successfully for user:', user.email);
         profile = newProfile;
       }
+    } else if (profileError) {
+      console.error('❌ Profile fetch error:', profileError);
+      return res.status(500).json({ 
+        error: 'Failed to fetch user profile',
+        details: profileError.message 
+      });
     }
 
     res.json({ 

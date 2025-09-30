@@ -183,8 +183,17 @@ router.post('/humanize', authenticateUser, async (req, res) => {
       .single();
 
     if (profileError) {
-      console.error('Profile fetch error:', profileError);
-      return res.status(500).json({ error: 'Failed to fetch user profile' });
+      console.error('❌ Profile fetch error:', profileError);
+      if (profileError.code === 'PGRST116') {
+        return res.status(400).json({ 
+          error: 'User profile not found. Please refresh the page to create your profile.',
+          code: 'PROFILE_NOT_FOUND'
+        });
+      }
+      return res.status(500).json({ 
+        error: 'Failed to fetch user profile',
+        details: profileError.message 
+      });
     }
 
     // Define word limits based on plan
