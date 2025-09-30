@@ -313,6 +313,8 @@ Requirements:
 - Make it sound more natural and human-like
 - Avoid repetitive patterns that sound AI-generated
 - Use varied sentence structures and natural transitions
+- Preserve emojis, numbering formats (1., 2., etc.), bullet points, and other formatting elements
+- Maintain any existing lists, headers, or structural elements
 - ${intensityLevel === 'strong' ? 'Make significant improvements to flow and readability' : intensityLevel === 'moderate' ? 'Make moderate improvements while keeping it recognizable' : 'Make subtle improvements that enhance readability'}
 
 IMPORTANT: Return ONLY the humanized text. Do not include any additional commentary, explanations, quotes, or punctuation marks around the text. Just return the pure humanized content.`;
