@@ -3,6 +3,16 @@ const { supabase, supabaseAnon } = require('../config/database');
 const OpenAI = require('openai');
 const router = express.Router();
 
+// Handle preflight OPTIONS requests for CORS
+router.options('*', (req, res) => {
+  console.log('🔍 Projects route OPTIONS preflight request');
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.header('Access-Control-Max-Age', '86400'); // 24 hours
+  res.status(200).end();
+});
+
 // Initialize OpenAI client
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -183,17 +193,8 @@ router.post('/humanize', authenticateUser, async (req, res) => {
       .single();
 
     if (profileError) {
-      console.error('❌ Profile fetch error:', profileError);
-      if (profileError.code === 'PGRST116') {
-        return res.status(400).json({ 
-          error: 'User profile not found. Please refresh the page to create your profile.',
-          code: 'PROFILE_NOT_FOUND'
-        });
-      }
-      return res.status(500).json({ 
-        error: 'Failed to fetch user profile',
-        details: profileError.message 
-      });
+      console.error('Profile fetch error:', profileError);
+      return res.status(500).json({ error: 'Failed to fetch user profile' });
     }
 
     // Define word limits based on plan
