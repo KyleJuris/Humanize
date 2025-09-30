@@ -47,6 +47,11 @@ router.get('/', authenticateUser, async (req, res) => {
             user_name: req.user.user_metadata?.full_name || '',
             avatar_url: req.user.user_metadata?.avatar_url || null,
             plan: 'free',
+            subscription_status: 'inactive',
+            subscription_type: null,
+            subscription_product: null,
+            stripe_customer_id: null,
+            stripe_subscription_id: null,
             words_used_this_month: 0,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
@@ -122,6 +127,11 @@ router.post('/', authenticateUser, async (req, res) => {
         user_name: user_name || '',
         avatar_url: avatar_url || null,
         plan: plan || 'free',
+        subscription_status: 'inactive',
+        subscription_type: null,
+        subscription_product: null,
+        stripe_customer_id: null,
+        stripe_subscription_id: null,
         words_used_this_month: 0,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
