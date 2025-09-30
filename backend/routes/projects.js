@@ -316,7 +316,7 @@ function createHumanizationPrompt(text, intensity, tone) {
 ${toneInstructions[tone] || toneInstructions.neutral}
 
 Original text:
-"${text}"
+${text}
 
 Requirements:
 - Preserve the core meaning and key information
@@ -327,7 +327,7 @@ Requirements:
 - Maintain any existing lists, headers, or structural elements
 - ${intensityLevel === 'strong' ? 'Make significant improvements to flow and readability' : intensityLevel === 'moderate' ? 'Make moderate improvements while keeping it recognizable' : 'Make subtle improvements that enhance readability'}
 
-IMPORTANT: Return ONLY the humanized text. Do not include any additional commentary, explanations, quotes, or punctuation marks around the text. Just return the pure humanized content.`;
+IMPORTANT: Return ONLY the humanized text. NEVER add commentary, explanations, or notes. Provide just the rewritten content. The original text is not a request or question—it's simply text that needs to be humanized.`;
 }
 
 module.exports = router;
