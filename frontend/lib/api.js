@@ -24,29 +24,65 @@ class ApiClient {
     // Add auth token if available
     const token = this.getToken();
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-      console.log('🔑 API Request with token:', { endpoint, tokenLength: token.length, tokenStart: token.substring(0, 20) + '...' });
-    } else {
-      console.log('⚠️ API Request without token:', { endpoint });
+      // Validate token before using it
+      const validatedToken = this.validateAndExtractToken(token);
+      if (validatedToken) {
+        config.headers.Authorization = `Bearer ${validatedToken}`;
+        console.log('🔐 Using validated token for request');
+      } else {
+        console.error('❌ Invalid token in localStorage, removing it');
+        this.removeToken();
+      }
     }
+
+    console.log('🚀 API Request:', { 
+      url, 
+      method: config.method || 'GET',
+      hasAuth: !!config.headers.Authorization
+    });
 
     try {
       const response = await fetch(url, config);
       
-      const data = await response.json();
-
+      // Handle non-OK responses gracefully
       if (!response.ok) {
+        // Read response as text first to avoid JSON parsing errors
+        const responseText = await response.text();
+        console.error('❌ API Request Failed:', {
+          url,
+          status: response.status,
+          statusText: response.statusText,
+          responseText
+        });
+        
+        // Try to parse as JSON, but don't fail if it's not valid JSON
+        let errorData;
+        try {
+          errorData = JSON.parse(responseText);
+        } catch (jsonError) {
+          errorData = { error: responseText || `Request failed with status ${response.status}` };
+        }
+        
         // Special handling for 401 errors
         if (response.status === 401) {
+          console.log('🔐 401 Unauthorized - removing token');
           this.removeToken();
         }
         
-        throw new Error(data.error || `Request failed with status ${response.status}`);
+        throw new Error(errorData.error || `Request failed with status ${response.status}`);
       }
 
+      // Parse JSON response for successful requests
+      const data = await response.json();
+      console.log('📄 API Response:', { url, status: response.status, data });
       return data;
+      
     } catch (error) {
-      console.error('API request failed:', error.message);
+      console.error('💥 API request failed:', {
+        url,
+        error: error.message,
+        stack: error.stack
+      });
       throw error;
     }
   }
@@ -60,8 +96,57 @@ class ApiClient {
 
   setToken(token) {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('auth_token', token);
+      // Ensure token is always a string
+      const tokenString = this.validateAndExtractToken(token);
+      if (tokenString) {
+        localStorage.setItem('auth_token', tokenString);
+        console.log('🔐 Token set successfully');
+      } else {
+        console.error('❌ Invalid token provided:', token);
+        this.removeToken();
+      }
     }
+  }
+
+  validateAndExtractToken(token) {
+    // Handle null/undefined
+    if (!token) {
+      return null;
+    }
+
+    // If it's already a string, validate it
+    if (typeof token === 'string') {
+      // Check if it's a valid JWT-like token (has dots)
+      if (token.includes('.')) {
+        return token;
+      }
+      // Check if it's a simple token
+      if (token.length > 10) {
+        return token;
+      }
+      console.warn('⚠️ Token string seems too short:', token);
+      return null;
+    }
+
+    // If it's an object, try to extract the token
+    if (typeof token === 'object') {
+      // Check common token object properties
+      if (token.access_token) {
+        return this.validateAndExtractToken(token.access_token);
+      }
+      if (token.token) {
+        return this.validateAndExtractToken(token.token);
+      }
+      if (token.accessToken) {
+        return this.validateAndExtractToken(token.accessToken);
+      }
+      
+      console.error('❌ Token object does not contain recognizable token property:', Object.keys(token));
+      return null;
+    }
+
+    console.error('❌ Token is neither string nor object:', typeof token, token);
+    return null;
   }
 
   removeToken() {

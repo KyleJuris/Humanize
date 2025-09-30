@@ -39,7 +39,17 @@ export default function HumanizerPage() {
     try {
       setLoadingProjects(true)
       const response = await api.getProjects()
-      setProjects(response.projects || [])
+      
+      // Guard against malformed response
+      if (response && Array.isArray(response.projects)) {
+        setProjects(response.projects)
+      } else if (response && Array.isArray(response)) {
+        // Handle case where response is directly an array
+        setProjects(response)
+      } else {
+        console.error('❌ Invalid projects response:', response)
+        setProjects([])
+      }
     } catch (error) {
       console.error('Error fetching projects:', error)
       // Fallback to empty array if API fails
@@ -52,54 +62,32 @@ export default function HumanizerPage() {
   const fetchUserProfile = async () => {
     try {
       const profile = await api.getProfile()
-      setUserProfile(profile)
       
-      // Set word limits based on plan
-      const limits = {
-        free: { perRequest: 500, monthly: 5000 },
-        pro: { perRequest: 1500, monthly: 15000 },
-        ultra: { perRequest: 3000, monthly: 30000 }
-      }
-      
-      const planLimits = limits[profile.plan] || limits.free
-      setWordLimits(planLimits)
-      setMonthlyUsage(profile.words_used_this_month || 0)
-    } catch (error) {
-      console.error('❌ Error fetching user profile:', error)
-      
-      // If profile doesn't exist, try to create it by calling getCurrentUser
-      if (error.message.includes('profile') || error.message.includes('PROFILE')) {
-        console.log('🔄 Attempting to create profile by calling getCurrentUser...')
-        console.log('🔍 Original error:', error.message)
-        try {
-          const userData = await api.getCurrentUser()
-          console.log('📋 getCurrentUser response:', userData)
-          if (userData && userData.user) {
-            console.log('✅ Profile created successfully via getCurrentUser')
-            // Retry fetching profile
-            const profile = await api.getProfile()
-            console.log('📋 Profile fetch after creation:', profile)
-            setUserProfile(profile)
-            
-            const limits = {
-              free: { perRequest: 500, monthly: 5000 },
-              pro: { perRequest: 1500, monthly: 15000 },
-              ultra: { perRequest: 3000, monthly: 30000 }
-            }
-            
-            const planLimits = limits[profile.plan] || limits.free
-            setWordLimits(planLimits)
-            setMonthlyUsage(profile.words_used_this_month || 0)
-            return
-          }
-        } catch (createError) {
-          console.error('❌ Failed to create profile:', createError)
-          console.error('❌ Create error details:', createError.message)
+      // Guard against malformed profile response
+      if (profile && typeof profile === 'object') {
+        setUserProfile(profile)
+        
+        // Set word limits based on plan
+        const limits = {
+          free: { perRequest: 500, monthly: 5000 },
+          pro: { perRequest: 1500, monthly: 15000 },
+          ultra: { perRequest: 3000, monthly: 30000 }
         }
+        
+        const planLimits = limits[profile.plan] || limits.free
+        setWordLimits(planLimits)
+        setMonthlyUsage(profile.words_used_this_month || 0)
+      } else {
+        console.error('❌ Invalid profile response:', profile)
+        // Use default limits if profile is malformed
+        setWordLimits({ perRequest: 500, monthly: 5000 })
+        setMonthlyUsage(0)
       }
-      
+    } catch (error) {
+      console.error('Error fetching user profile:', error)
       // Use default limits if profile fetch fails
-      console.log('⚠️ Using default limits due to profile fetch failure')
+      setWordLimits({ perRequest: 500, monthly: 5000 })
+      setMonthlyUsage(0)
     }
   }
 
@@ -215,14 +203,8 @@ export default function HumanizerPage() {
         setOutputText('OpenAI API key is invalid. Please contact support.')
       } else if (error.message.includes('exceeds') || error.message.includes('limit')) {
         setOutputText(`❌ ${error.message}`)
-      } else if (error.message.includes('profile not found') || error.message.includes('PROFILE_NOT_FOUND')) {
-        setOutputText('❌ User profile not found. Please refresh the page to create your profile.')
-        // Automatically refresh the page after 3 seconds
-        setTimeout(() => {
-          window.location.reload()
-        }, 3000)
       } else {
-        setOutputText(`❌ Error: ${error.message}`)
+        setOutputText('Failed to humanize text. Please try again.')
       }
     } finally {
       setIsProcessing(false)
@@ -252,8 +234,13 @@ export default function HumanizerPage() {
       setProjects([response.project, ...projects])
       
       // Select the newly created project
-      setSelectedProject(response.project.id)
-      setSelectedProjectData(response.project)
+      if (response?.project?.id) {
+        setSelectedProject(response.project.id)
+        setSelectedProjectData(response.project)
+      } else {
+        console.error('❌ Invalid project response:', response)
+        throw new Error('Invalid project response from server')
+      }
     } catch (error) {
       console.error('Error creating project:', error)
       // Don't create fallback project - let user retry
@@ -382,7 +369,14 @@ export default function HumanizerPage() {
 
             {/* Projects List */}
             <div style={{ marginBottom: '2rem' }}>
-              {filteredProjects.map((project) => (
+              {filteredProjects.map((project) => {
+                // Guard against malformed project objects
+                if (!project || !project.id) {
+                  console.warn('⚠️ Skipping malformed project:', project)
+                  return null
+                }
+                
+                return (
                 <div key={project.id} style={{
                   padding: '0.75rem',
                   backgroundColor: selectedProject === project.id ? '#f0f9ff' : '#f9fafb',
@@ -532,7 +526,8 @@ export default function HumanizerPage() {
                     </div>
                   )}
                 </div>
-              ))}
+                )
+              })}
             </div>
           </div>
 
