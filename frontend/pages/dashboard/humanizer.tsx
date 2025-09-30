@@ -231,12 +231,16 @@ export default function HumanizerPage() {
         tone: tone
       }
       const response = await api.createProject(projectData)
-      setProjects([response.project, ...projects])
+      // Handle both response formats: {project: {...}} and direct project object
+      const project = response.project || response;
+      setProjects([project, ...projects])
       
       // Select the newly created project
-      if (response?.project?.id) {
-        setSelectedProject(response.project.id)
-        setSelectedProjectData(response.project)
+      
+      if (project && project.id) {
+        setSelectedProject(project.id)
+        setSelectedProjectData(project)
+        console.log('✅ Project created and selected:', project.id)
       } else {
         console.error('❌ Invalid project response:', response)
         throw new Error('Invalid project response from server')
