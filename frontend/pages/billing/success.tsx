@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
+import Head from 'next/head';
 
 const BillingSuccess: React.FC = () => {
   const router = useRouter();
@@ -8,67 +9,189 @@ const BillingSuccess: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [sessionData, setSessionData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isComplete, setIsComplete] = useState(false);
 
   useEffect(() => {
     if (session_id) {
-      // You can optionally fetch session details here
+      // Simulate processing time for better UX
+      setTimeout(() => {
+        setLoading(false);
+        setIsComplete(true);
+      }, 2000);
+    } else {
       setLoading(false);
+      setError('No session ID provided');
     }
   }, [session_id]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Processing your payment...</p>
-        </div>
-      </div>
-    );
-  }
+  // Auto-redirect to humanizer after 5 seconds
+  useEffect(() => {
+    if (isComplete) {
+      const timer = setTimeout(() => {
+        router.push('/dashboard/humanizer');
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isComplete, router]);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8 text-center">
-        <div className="mb-6">
-          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
-            <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
+    <>
+      <Head>
+        <title>Payment Successful - Humanizer Pro</title>
+        <meta name="description" content="Your payment has been processed successfully" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+      
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #f0f9ff 0%, #fefce8 100%)',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <div style={{
+          backgroundColor: 'white',
+          borderRadius: '12px',
+          padding: '3rem',
+          boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+          border: '1px solid rgba(0,0,0,0.05)',
+          maxWidth: '450px',
+          width: '100%',
+          textAlign: 'center'
+        }}>
+          <div style={{
+            width: '60px',
+            height: '60px',
+            margin: '0 auto 1.5rem',
+            borderRadius: '50%',
+            backgroundColor: loading ? '#fbbf24' : error ? '#ef4444' : '#10b981',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '24px'
+          }}>
+            {loading && '⏳'}
+            {!loading && !error && '✅'}
+            {error && '❌'}
           </div>
-        </div>
-        
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">
-          Payment Successful!
-        </h1>
-        
-        <p className="text-gray-600 mb-6">
-          Thank you for subscribing! Your payment has been processed successfully and your subscription is now active.
-        </p>
-        
-        {session_id && (
-          <p className="text-sm text-gray-500 mb-6">
-            Session ID: {session_id}
+
+          <h1 style={{
+            fontSize: '1.5rem',
+            fontWeight: 'bold',
+            color: '#1f2937',
+            marginBottom: '1rem'
+          }}>
+            {loading && 'Processing Payment...'}
+            {!loading && !error && 'Payment Successful!'}
+            {error && 'Payment Failed'}
+          </h1>
+
+          <p style={{
+            color: '#6b7280',
+            marginBottom: '1.5rem',
+            lineHeight: '1.5'
+          }}>
+            {loading && 'Please wait while we confirm your payment...'}
+            {!loading && !error && 'Thank you for subscribing! Your payment has been processed successfully and your subscription is now active.'}
+            {error && 'There was an issue processing your payment. Please contact support if this continues.'}
           </p>
-        )}
-        
-        <div className="space-y-3">
-          <Link 
-            href="/dashboard"
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors inline-block"
-          >
-            Go to Dashboard
-          </Link>
-          
-          <Link 
-            href="/billing"
-            className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 transition-colors inline-block"
-          >
-            View Billing
-          </Link>
+
+          {loading && (
+            <div style={{
+              width: '40px',
+              height: '40px',
+              border: '4px solid #e5e7eb',
+              borderTop: '4px solid #10b981',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+              margin: '0 auto'
+            }} />
+          )}
+
+          {!loading && !error && (
+            <div style={{ marginTop: '2rem' }}>
+              <p style={{
+                fontSize: '0.9rem',
+                color: '#6b7280',
+                marginBottom: '1rem'
+              }}>
+                Redirecting to humanizer in 5 seconds...
+              </p>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <Link 
+                  href="/dashboard/humanizer"
+                  style={{
+                    backgroundColor: '#10b981',
+                    color: 'white',
+                    border: 'none',
+                    padding: '0.75rem 1.5rem',
+                    borderRadius: '8px',
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    textDecoration: 'none',
+                    display: 'block',
+                    textAlign: 'center'
+                  }}
+                >
+                  Go to Humanizer
+                </Link>
+                
+                <Link 
+                  href="/pricing"
+                  style={{
+                    backgroundColor: '#f3f4f6',
+                    color: '#374151',
+                    border: 'none',
+                    padding: '0.75rem 1.5rem',
+                    borderRadius: '8px',
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    textDecoration: 'none',
+                    display: 'block',
+                    textAlign: 'center'
+                  }}
+                >
+                  View Plans
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {error && (
+            <div style={{ marginTop: '2rem' }}>
+              <Link 
+                href="/pricing"
+                style={{
+                  backgroundColor: '#10b981',
+                  color: 'white',
+                  border: 'none',
+                  padding: '0.75rem 1.5rem',
+                  borderRadius: '8px',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  textDecoration: 'none',
+                  display: 'block',
+                  textAlign: 'center'
+                }}
+              >
+                Try Again
+              </Link>
+            </div>
+          )}
+
+          <style jsx>{`
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          `}</style>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

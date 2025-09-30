@@ -29,11 +29,11 @@ export default function HumanizerPage() {
 
   // Fetch user projects and profile on component mount and when user changes
   useEffect(() => {
-    if (isAuthenticated && user?.id) {
+    if (isAuthenticated && user) {
       fetchProjects()
       fetchUserProfile()
     }
-  }, [isAuthenticated, user?.id])
+  }, [isAuthenticated, user])
 
   const fetchProjects = async () => {
     try {
@@ -246,9 +246,22 @@ export default function HumanizerPage() {
     }
   }
 
-  const filteredProjects = filterCategory === 'all' 
-    ? projects 
-    : projects.filter(p => p.category === filterCategory)
+  const filteredProjects = (() => {
+    let sortedProjects = [...projects];
+    
+    switch (filterCategory) {
+      case 'date':
+        return sortedProjects.sort((a, b) => new Date(b.updated_at || b.created_at).getTime() - new Date(a.updated_at || a.created_at).getTime());
+      case 'date-oldest':
+        return sortedProjects.sort((a, b) => new Date(a.updated_at || a.created_at).getTime() - new Date(b.updated_at || b.created_at).getTime());
+      case 'alphabetical':
+        return sortedProjects.sort((a, b) => a.title.localeCompare(b.title));
+      case 'alphabetical-reverse':
+        return sortedProjects.sort((a, b) => b.title.localeCompare(a.title));
+      default:
+        return sortedProjects;
+    }
+  })()
 
   return (
     <>
@@ -305,7 +318,7 @@ export default function HumanizerPage() {
             {/* Filter */}
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: '500', marginBottom: '0.5rem', color: '#374151' }}>
-                Filter by Category
+                Sort Projects
               </label>
               <select 
                 value={filterCategory}
@@ -321,10 +334,10 @@ export default function HumanizerPage() {
                 }}
               >
                 <option value="all">All Projects</option>
-                <option value="academic">Academic</option>
-                <option value="marketing">Marketing</option>
-                <option value="blog">Blog</option>
-                <option value="general">General</option>
+                <option value="date">Sort by Date (Newest)</option>
+                <option value="date-oldest">Sort by Date (Oldest)</option>
+                <option value="alphabetical">Sort Alphabetically (A-Z)</option>
+                <option value="alphabetical-reverse">Sort Alphabetically (Z-A)</option>
               </select>
             </div>
 
@@ -745,19 +758,44 @@ export default function HumanizerPage() {
                   {activeTab === 'output' && (
                     <div>
                       {outputText ? (
-                         <div style={{
-                           padding: '1rem',
-                           backgroundColor: '#f9fafb',
-                           borderRadius: '8px',
-                           border: '2px solid #e5e7eb'
-                         }}>
-                           <h4 style={{ color: '#374151', marginBottom: '0.5rem', marginTop: 0 }}>Humanized Text:</h4>
-                           <div style={{ 
-                             color: '#1f2937', 
-                             lineHeight: '1.6',
-                             whiteSpace: 'pre-wrap',
-                             fontFamily: 'inherit'
-                           }}>{outputText}</div>
+                        <div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                            <h4 style={{ color: '#374151', margin: 0 }}>Humanized Text:</h4>
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(outputText)
+                                // You could add a toast notification here
+                              }}
+                              style={{
+                                backgroundColor: '#f3f4f6',
+                                color: '#374151',
+                                border: '1px solid #d1d5db',
+                                padding: '0.5rem 0.75rem',
+                                borderRadius: '6px',
+                                fontSize: '0.8rem',
+                                fontWeight: '500',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.25rem'
+                              }}
+                            >
+                              📋 Copy Text
+                            </button>
+                          </div>
+                          <div style={{
+                            padding: '1rem',
+                            backgroundColor: '#f9fafb',
+                            borderRadius: '8px',
+                            border: '2px solid #e5e7eb'
+                          }}>
+                            <div style={{ 
+                              color: '#1f2937', 
+                              lineHeight: '1.6',
+                              whiteSpace: 'pre-wrap',
+                              fontFamily: 'inherit'
+                            }}>{outputText}</div>
+                          </div>
                         </div>
                       ) : (
                         <div style={{
@@ -792,8 +830,26 @@ export default function HumanizerPage() {
                                    }}>
                                      {index === 0 ? 'Latest Output' : `Version ${index + 1}`}
                                    </h5>
-                                   <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>
-                                     {new Date(output.timestamp).toLocaleTimeString()} • {output.settings.tone} • {output.settings.intensity}%
+                                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                     <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>
+                                       {new Date(output.timestamp).toLocaleTimeString()} • {output.settings.tone} • {output.settings.intensity}%
+                                     </div>
+                                     <button
+                                       onClick={() => {
+                                         navigator.clipboard.writeText(output.text)
+                                       }}
+                                       style={{
+                                         backgroundColor: 'transparent',
+                                         color: '#6b7280',
+                                         border: '1px solid #d1d5db',
+                                         padding: '0.25rem 0.5rem',
+                                         borderRadius: '4px',
+                                         fontSize: '0.7rem',
+                                         cursor: 'pointer'
+                                       }}
+                                     >
+                                       📋
+                                     </button>
                                    </div>
                                  </div>
                                  <div style={{ 

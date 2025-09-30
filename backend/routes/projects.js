@@ -315,7 +315,7 @@ Requirements:
 - Use varied sentence structures and natural transitions
 - ${intensityLevel === 'strong' ? 'Make significant improvements to flow and readability' : intensityLevel === 'moderate' ? 'Make moderate improvements while keeping it recognizable' : 'Make subtle improvements that enhance readability'}
 
-Return only the humanized text without any additional commentary.`;
+IMPORTANT: Return ONLY the humanized text. Do not include any additional commentary, explanations, quotes, or punctuation marks around the text. Just return the pure humanized content.`;
 }
 
 module.exports = router;

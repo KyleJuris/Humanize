@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import api from '../lib/api';
 
 interface SubscribeButtonProps {
@@ -18,11 +18,45 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
 }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<any>(null);
+  const [checkingSubscription, setCheckingSubscription] = useState(true);
+
+  // Check subscription status on component mount
+  useEffect(() => {
+    const checkSubscription = async () => {
+      try {
+        const status = await api.getSubscriptionStatus();
+        setSubscriptionStatus(status);
+      } catch (err) {
+        console.error('Error checking subscription status:', err);
+        // Continue without blocking if subscription check fails
+      } finally {
+        setCheckingSubscription(false);
+      }
+    };
+
+    checkSubscription();
+  }, []);
 
   const handleSubscribe = async () => {
     try {
       setLoading(true);
       setError(null);
+
+      // Check if user already has an active subscription
+      if (subscriptionStatus?.hasSubscription) {
+        const currentPlan = subscriptionStatus.subscription?.productName?.toLowerCase();
+        const requestedPlan = planName.toLowerCase();
+        
+        if (currentPlan === requestedPlan) {
+          throw new Error(`You already have an active ${planName} subscription.`);
+        } else if (currentPlan === 'pro' && requestedPlan === 'ultra') {
+          // Allow upgrade from Pro to Ultra
+          console.log('Upgrading from Pro to Ultra...');
+        } else if (currentPlan === 'ultra' && requestedPlan === 'pro') {
+          throw new Error('You already have an Ultra subscription, which includes all Pro features.');
+        }
+      }
 
       console.log(`Creating checkout session for ${planName} plan...`);
       
@@ -50,16 +84,40 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
     }
   };
 
+  // Determine button state and text
+  const getButtonState = () => {
+    if (checkingSubscription) {
+      return { disabled: true, text: 'Checking...', opacity: 0.7 };
+    }
+    
+    if (subscriptionStatus?.hasSubscription) {
+      const currentPlan = subscriptionStatus.subscription?.productName?.toLowerCase();
+      const requestedPlan = planName.toLowerCase();
+      
+      if (currentPlan === requestedPlan) {
+        return { disabled: true, text: 'Already Subscribed', opacity: 0.7 };
+      } else if (currentPlan === 'ultra' && requestedPlan === 'pro') {
+        return { disabled: true, text: 'Already Have Ultra', opacity: 0.7 };
+      } else if (currentPlan === 'pro' && requestedPlan === 'ultra') {
+        return { disabled: false, text: 'Upgrade to Ultra', opacity: 1 };
+      }
+    }
+    
+    return { disabled: false, text: children || 'Subscribe', opacity: 1 };
+  };
+
+  const buttonState = getButtonState();
+
   return (
     <div>
       <button
         onClick={handleSubscribe}
-        disabled={loading}
+        disabled={loading || buttonState.disabled}
         className={className}
         style={{
           ...style,
-          opacity: loading ? 0.7 : 1,
-          cursor: loading ? 'not-allowed' : 'pointer'
+          opacity: loading ? 0.7 : buttonState.opacity,
+          cursor: (loading || buttonState.disabled) ? 'not-allowed' : 'pointer'
         }}
       >
         {loading ? (
@@ -75,7 +133,7 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
             Processing...
           </div>
         ) : (
-          children || 'Subscribe'
+          buttonState.text
         )}
       </button>
       
