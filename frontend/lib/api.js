@@ -25,6 +25,9 @@ class ApiClient {
     const token = this.getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log('🔑 API Request with token:', { endpoint, tokenLength: token.length, tokenStart: token.substring(0, 20) + '...' });
+    } else {
+      console.log('⚠️ API Request without token:', { endpoint });
     }
 
     try {

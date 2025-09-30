@@ -70,12 +70,15 @@ export default function HumanizerPage() {
       // If profile doesn't exist, try to create it by calling getCurrentUser
       if (error.message.includes('profile') || error.message.includes('PROFILE')) {
         console.log('🔄 Attempting to create profile by calling getCurrentUser...')
+        console.log('🔍 Original error:', error.message)
         try {
           const userData = await api.getCurrentUser()
+          console.log('📋 getCurrentUser response:', userData)
           if (userData && userData.user) {
             console.log('✅ Profile created successfully via getCurrentUser')
             // Retry fetching profile
             const profile = await api.getProfile()
+            console.log('📋 Profile fetch after creation:', profile)
             setUserProfile(profile)
             
             const limits = {
@@ -91,6 +94,7 @@ export default function HumanizerPage() {
           }
         } catch (createError) {
           console.error('❌ Failed to create profile:', createError)
+          console.error('❌ Create error details:', createError.message)
         }
       }
       
