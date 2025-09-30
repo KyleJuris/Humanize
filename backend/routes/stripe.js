@@ -161,16 +161,24 @@ router.post('/checkout-session', authenticateUser, async (req, res) => {
   }
 });
 
+// Test route to verify stripe routes are working
+router.get('/test', (req, res) => {
+  res.json({ message: 'Stripe routes are working', timestamp: new Date().toISOString() });
+});
+
 // Get session status
 router.get('/session-status', async (req, res) => {
   try {
+    console.log('🔍 Session status endpoint called with query:', req.query);
     const { session_id } = req.query;
     
     if (!session_id) {
       return res.status(400).json({ error: 'Session ID is required' });
     }
 
+    console.log('🔍 Retrieving session from Stripe:', session_id);
     const session = await stripe.checkout.sessions.retrieve(session_id);
+    console.log('🔍 Session retrieved:', { id: session.id, status: session.status });
 
     res.json({
       status: session.status,
