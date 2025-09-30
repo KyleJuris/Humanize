@@ -126,8 +126,8 @@ router.get('/me', async (req, res) => {
         .from('profiles')
         .insert({
           user_id: user.id,
-          email: user.email,
-          user_name: user.user_metadata?.full_name || '',
+          email: user.email || 'unknown@example.com', // Ensure email is never null
+          user_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User', // Ensure user_name is never null
           avatar_url: user.user_metadata?.avatar_url || null,
           plan: 'free',
           subscription_status: 'inactive',

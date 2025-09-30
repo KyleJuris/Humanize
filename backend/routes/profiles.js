@@ -46,8 +46,8 @@ router.get('/', authenticateUser, async (req, res) => {
         
         const profileData = {
           user_id: req.user.id,
-          email: req.user.email,
-          user_name: req.user.user_metadata?.full_name || '',
+          email: req.user.email || 'unknown@example.com', // Ensure email is never null
+          user_name: req.user.user_metadata?.full_name || req.user.email?.split('@')[0] || 'User', // Ensure user_name is never null
           avatar_url: req.user.user_metadata?.avatar_url || null,
           plan: 'free',
           subscription_status: 'inactive',
@@ -140,8 +140,8 @@ router.post('/', authenticateUser, async (req, res) => {
       .from('profiles')
       .insert({
         user_id: req.user.id,
-        email: req.user.email,
-        user_name: user_name || '',
+        email: req.user.email || 'unknown@example.com', // Ensure email is never null
+        user_name: user_name || req.user.email?.split('@')[0] || 'User', // Ensure user_name is never null
         avatar_url: avatar_url || null,
         plan: plan || 'free',
         subscription_status: 'inactive',
