@@ -91,7 +91,15 @@ router.get('/me', async (req, res) => {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
     
+    console.log('🔍 /auth/me endpoint called');
+    console.log('🔑 Token received:', { 
+      hasToken: !!token, 
+      tokenLength: token ? token.length : 0,
+      tokenStart: token ? token.substring(0, 20) + '...' : 'none'
+    });
+    
     if (!token) {
+      console.log('❌ No token provided');
       return res.status(401).json({ error: 'No token provided' });
     }
 
@@ -121,24 +129,30 @@ router.get('/me', async (req, res) => {
     // If profile doesn't exist, create one
     if (profileError && profileError.code === 'PGRST116') {
       console.log('📝 Creating new profile for user:', user.email);
+      console.log('📋 User data:', { id: user.id, email: user.email, metadata: user.user_metadata });
+      
+      const profileData = {
+        user_id: user.id,
+        email: user.email,
+        user_name: user.user_metadata?.full_name || '',
+        avatar_url: user.user_metadata?.avatar_url || null,
+        plan: 'free',
+        words_used_this_month: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      console.log('📋 Profile data to insert:', profileData);
       
       const { data: newProfile, error: createError } = await supabase
         .from('profiles')
-        .insert({
-          user_id: user.id,
-          email: user.email,
-          user_name: user.user_metadata?.full_name || '',
-          avatar_url: user.user_metadata?.avatar_url || null,
-          plan: 'free',
-          words_used_this_month: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
+        .insert(profileData)
         .select()
         .single();
 
       if (createError) {
         console.error('❌ Profile creation error:', createError);
+        console.error('❌ Create error details:', createError.message, createError.code);
         // Return error instead of continuing without profile
         return res.status(500).json({ 
           error: 'Failed to create user profile',
@@ -146,10 +160,12 @@ router.get('/me', async (req, res) => {
         });
       } else {
         console.log('✅ Profile created successfully for user:', user.email);
+        console.log('📋 Created profile:', newProfile);
         profile = newProfile;
       }
     } else if (profileError) {
       console.error('❌ Profile fetch error:', profileError);
+      console.error('❌ Profile error details:', profileError.message, profileError.code);
       return res.status(500).json({ 
         error: 'Failed to fetch user profile',
         details: profileError.message 
