@@ -45,6 +45,7 @@ router.get('/', authenticateUser, async (req, res) => {
         });
         
         const profileData = {
+          id: req.user.id, // Use user ID as profile ID (consistent with database design)
           user_id: req.user.id,
           email: req.user.email || 'unknown@example.com', // Ensure email is never null
           user_name: req.user.user_metadata?.full_name || req.user.email?.split('@')[0] || 'User', // Ensure user_name is never null
@@ -139,6 +140,7 @@ router.post('/', authenticateUser, async (req, res) => {
     const { data, error } = await supabase
       .from('profiles')
       .insert({
+        id: req.user.id, // Use user ID as profile ID (consistent with database design)
         user_id: req.user.id,
         email: req.user.email || 'unknown@example.com', // Ensure email is never null
         user_name: user_name || req.user.email?.split('@')[0] || 'User', // Ensure user_name is never null
