@@ -1,11 +1,27 @@
 const express = require('express');
 const router = express.Router();
 const Stripe = require('stripe');
-const { supabase, supabaseAnon } = require('../config/database');
+
+// Try to load database config, but don't fail if it's not available
+let supabase, supabaseAnon;
+try {
+  const dbConfig = require('../config/database');
+  supabase = dbConfig.supabase;
+  supabaseAnon = dbConfig.supabaseAnon;
+  console.log('✅ Database config loaded for stripe routes');
+} catch (error) {
+  console.log('⚠️ Database config not available for stripe routes:', error.message);
+  supabase = null;
+  supabaseAnon = null;
+}
 
 // Middleware to authenticate user
 const authenticateUser = async (req, res, next) => {
   try {
+    if (!supabaseAnon) {
+      return res.status(503).json({ error: 'Authentication service unavailable' });
+    }
+
     const token = req.headers.authorization?.replace('Bearer ', '');
     
     if (!token) {
@@ -27,7 +43,17 @@ const authenticateUser = async (req, res, next) => {
 };
 
 // Initialize Stripe with secret key
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+let stripe;
+try {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error('STRIPE_SECRET_KEY not provided');
+  }
+  stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+  console.log('✅ Stripe client initialized');
+} catch (error) {
+  console.error('❌ Failed to initialize Stripe client:', error.message);
+  stripe = null;
+}
 
 // Valid product configurations
 const VALID_PRODUCTS = {
@@ -163,12 +189,21 @@ router.post('/checkout-session', authenticateUser, async (req, res) => {
 
 // Test route to verify stripe routes are working
 router.get('/test', (req, res) => {
-  res.json({ message: 'Stripe routes are working', timestamp: new Date().toISOString() });
+  res.json({ 
+    message: 'Stripe routes are working', 
+    timestamp: new Date().toISOString(),
+    stripeAvailable: !!stripe,
+    databaseAvailable: !!supabase
+  });
 });
 
 // Get session status
 router.get('/session-status', async (req, res) => {
   try {
+    if (!stripe) {
+      return res.status(503).json({ error: 'Stripe service unavailable' });
+    }
+
     console.log('🔍 Session status endpoint called with query:', req.query);
     const { session_id } = req.query;
     
@@ -330,26 +365,30 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
         console.log('User ID:', userId, 'Email:', userEmail, 'Product:', productName);
         
         // Update user subscription status in Supabase (idempotent)
-        try {
-          const { error: updateError } = await supabase
-            .from('profiles')
-            .update({
-              subscription_status: 'active',
-              subscription_type: productType,
-              subscription_product: productName,
-              stripe_customer_id: session.customer,
-              stripe_subscription_id: session.subscription,
-              updated_at: new Date().toISOString()
-            })
-            .eq('user_id', userId);
-            
-          if (updateError) {
-            console.error('Error updating user subscription:', updateError);
-          } else {
-            console.log('✅ User subscription updated successfully');
+        if (supabase) {
+          try {
+            const { error: updateError } = await supabase
+              .from('profiles')
+              .update({
+                subscription_status: 'active',
+                subscription_type: productType,
+                subscription_product: productName,
+                stripe_customer_id: session.customer,
+                stripe_subscription_id: session.subscription,
+                updated_at: new Date().toISOString()
+              })
+              .eq('user_id', userId);
+              
+            if (updateError) {
+              console.error('Error updating user subscription:', updateError);
+            } else {
+              console.log('✅ User subscription updated successfully');
+            }
+          } catch (dbError) {
+            console.error('Database error updating subscription:', dbError);
           }
-        } catch (dbError) {
-          console.error('Database error updating subscription:', dbError);
+        } else {
+          console.log('⚠️ Database not available, skipping subscription update');
         }
         
         break;
