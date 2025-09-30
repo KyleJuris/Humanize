@@ -25,42 +25,16 @@ class ApiClient {
     const token = this.getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('🔑 Token added to request:', `${token.substring(0, 20)}...`);
-    } else {
-      console.log('⚠️ No token available for request');
     }
-
-    console.log('🚀 API Request:', { 
-      url, 
-      method: config.method || 'GET', 
-      body: config.body,
-      hasToken: !!token
-    });
 
     try {
       const response = await fetch(url, config);
-      console.log('📡 API Response:', { 
-        url,
-        status: response.status, 
-        statusText: response.statusText,
-        ok: response.ok
-      });
       
       const data = await response.json();
-      console.log('📄 API Data:', data);
 
       if (!response.ok) {
-        console.error('❌ API Request Failed:', {
-          url,
-          status: response.status,
-          statusText: response.statusText,
-          error: data.error || `Request failed with status ${response.status}`,
-          hasToken: !!token
-        });
-        
         // Special handling for 401 errors
         if (response.status === 401) {
-          console.error('🔐 Authentication failed - clearing token');
           this.removeToken();
         }
         
@@ -69,12 +43,7 @@ class ApiClient {
 
       return data;
     } catch (error) {
-      console.error('💥 API request failed:', {
-        url,
-        error: error.message,
-        stack: error.stack,
-        hasToken: !!token
-      });
+      console.error('API request failed:', error.message);
       throw error;
     }
   }

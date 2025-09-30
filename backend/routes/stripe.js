@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Stripe = require('stripe');
-const { supabaseAnon } = require('../config/database');
+const { supabase, supabaseAnon } = require('../config/database');
 
 // Middleware to authenticate user
 const authenticateUser = async (req, res, next) => {
@@ -323,7 +323,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
         
         // Update user subscription status in Supabase (idempotent)
         try {
-          const { error: updateError } = await supabaseAnon
+          const { error: updateError } = await supabase
             .from('profiles')
             .update({
               subscription_status: 'active',

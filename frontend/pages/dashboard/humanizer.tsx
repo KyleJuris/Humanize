@@ -3,7 +3,6 @@ import Head from 'next/head'
 import Link from 'next/link'
 import Header from '../../components/Header'
 import ProtectedRoute from '../../components/ProtectedRoute'
-import AuthDebug from '../../components/AuthDebug'
 import { useAuth } from '../../contexts/AuthContext'
 import api from '../../lib/api'
 
@@ -280,7 +279,6 @@ export default function HumanizerPage() {
           fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
         }}>
           <Header currentPage="humanizer" />
-          <AuthDebug />
 
           {/* Main Content */}
           <div style={{ display: 'flex', minHeight: 'calc(100vh - 80px)' }}>

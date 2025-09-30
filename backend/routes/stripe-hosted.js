@@ -45,8 +45,8 @@ router.post('/create-checkout-session', authenticateUser, async (req, res) => {
     const stripe = getStripe();
     // Compose absolute URLs if not provided; you can set these via env if preferred:
     const defaultSite = process.env.NEXT_PUBLIC_SITE_URL || process.env.FRONTEND_URL;
-    const successURL = success_url || `${defaultSite}/success?session_id={CHECKOUT_SESSION_ID}`;
-    const cancelURL  = cancel_url  || `${defaultSite}/cancel`;
+    const successURL = success_url || `${defaultSite}/billing/success?session_id={CHECKOUT_SESSION_ID}`;
+    const cancelURL  = cancel_url  || `${defaultSite}/billing/cancel`;
 
     // Create session; ensure mode matches your Price type (subscription vs payment)
     const session = await stripe.checkout.sessions.create({
