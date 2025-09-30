@@ -25,12 +25,16 @@ class ApiClient {
     const token = this.getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log('🔑 Token added to request:', `${token.substring(0, 20)}...`);
+    } else {
+      console.log('⚠️ No token available for request');
     }
 
     console.log('🚀 API Request:', { 
       url, 
       method: config.method || 'GET', 
-      body: config.body 
+      body: config.body,
+      hasToken: !!token
     });
 
     try {
@@ -50,8 +54,16 @@ class ApiClient {
           url,
           status: response.status,
           statusText: response.statusText,
-          error: data.error || `Request failed with status ${response.status}`
+          error: data.error || `Request failed with status ${response.status}`,
+          hasToken: !!token
         });
+        
+        // Special handling for 401 errors
+        if (response.status === 401) {
+          console.error('🔐 Authentication failed - clearing token');
+          this.removeToken();
+        }
+        
         throw new Error(data.error || `Request failed with status ${response.status}`);
       }
 
@@ -60,7 +72,8 @@ class ApiClient {
       console.error('💥 API request failed:', {
         url,
         error: error.message,
-        stack: error.stack
+        stack: error.stack,
+        hasToken: !!token
       });
       throw error;
     }

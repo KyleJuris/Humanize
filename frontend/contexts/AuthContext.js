@@ -94,6 +94,8 @@ export const AuthProvider = ({ children }) => {
 
   const initializeAuth = async () => {
     try {
+      console.log('🔐 Initializing authentication...');
+      
       // Check if we have a persisted Supabase session
       const { data: { session }, error } = await getSupabase().auth.getSession();
       
@@ -102,9 +104,12 @@ export const AuthProvider = ({ children }) => {
       }
 
       if (session) {
+        console.log('✅ Found Supabase session for user:', session.user.email);
+        
         // Check if session is expired
         const now = Math.floor(Date.now() / 1000);
         if (session.expires_at && session.expires_at < now) {
+          console.log('⚠️ Session expired, attempting refresh...');
           if (refreshAttempts < maxRefreshAttempts) {
             setRefreshAttempts(prev => prev + 1);
             try {
@@ -116,6 +121,7 @@ export const AuthProvider = ({ children }) => {
                 return;
               }
               if (refreshData.session) {
+                console.log('✅ Session refreshed successfully');
                 api.setToken(refreshData.session.access_token);
                 setUser({
                   id: refreshData.session.user.id,
@@ -137,15 +143,23 @@ export const AuthProvider = ({ children }) => {
         }
         
         // Set the token in our API client
+        console.log('🔑 Setting token in API client...');
         api.setToken(session.access_token);
+        
+        // Verify token was set
+        const storedToken = api.getToken();
+        console.log('🔍 Token verification:', storedToken ? 'Token set successfully' : 'Token not set');
         
         // Get user data from our backend
         try {
+          console.log('📡 Fetching user data from backend...');
           const userData = await api.getCurrentUser();
+          console.log('✅ Backend user data received:', userData.user.email);
           setUser(userData.user);
         } catch (apiError) {
-          console.error('API user data error:', apiError);
+          console.error('❌ API user data error:', apiError);
           // Fallback to Supabase user data
+          console.log('🔄 Falling back to Supabase user data');
           setUser({
             id: session.user.id,
             email: session.user.email,
@@ -153,32 +167,40 @@ export const AuthProvider = ({ children }) => {
           });
         }
       } else {
+        console.log('⚠️ No Supabase session found');
+        
         // Check if we have a token in localStorage as fallback
         const token = api.getToken();
         if (token) {
+          console.log('🔍 Found token in localStorage, validating...');
           try {
             const userData = await api.getCurrentUser();
+            console.log('✅ Token validation successful');
             setUser(userData.user);
           } catch (error) {
-            console.error('Token-based auth failed:', error);
+            console.error('❌ Token-based auth failed:', error);
             api.removeToken();
           }
         } else {
+          console.log('🔍 No token found, checking for guest session...');
           // Check for guest session in Supabase storage
           const { data: guestSession } = await getSupabase().auth.getSession()
           
           if (guestSession.session && guestSession.session.user?.user_metadata?.isGuest) {
+            console.log('✅ Found guest session');
             setUser({
               id: guestSession.session.user.id,
               email: guestSession.session.user.email,
               isGuest: true,
               ...guestSession.session.user.user_metadata
             })
+          } else {
+            console.log('❌ No authentication found');
           }
         }
       }
     } catch (error) {
-      console.error('Auth initialization failed:', error);
+      console.error('❌ Auth initialization failed:', error);
     } finally {
       setLoading(false);
     }
