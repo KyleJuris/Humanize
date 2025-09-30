@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Head from 'next/head';
+import api from '../../lib/api';
 
 const BillingSuccess: React.FC = () => {
   const router = useRouter();
@@ -13,11 +14,30 @@ const BillingSuccess: React.FC = () => {
 
   useEffect(() => {
     if (session_id) {
-      // Simulate processing time for better UX
-      setTimeout(() => {
-        setLoading(false);
-        setIsComplete(true);
-      }, 2000);
+      // Validate the session status with Stripe
+      const validateSession = async () => {
+        try {
+          setLoading(true);
+          console.log('Validating session:', session_id);
+          const sessionData = await api.getSessionStatus(session_id as string);
+          console.log('Session data received:', sessionData);
+          
+          if (sessionData.status === 'complete') {
+            setSessionData(sessionData);
+            setIsComplete(true);
+          } else {
+            console.log('Payment not complete, status:', sessionData.status);
+            setError(`Payment status: ${sessionData.status}`);
+          }
+        } catch (error: any) {
+          console.error('Error validating session:', error);
+          setError(error.message || 'Failed to validate payment');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      validateSession();
     } else {
       setLoading(false);
       setError('No session ID provided');
@@ -95,7 +115,7 @@ const BillingSuccess: React.FC = () => {
             lineHeight: '1.5'
           }}>
             {loading && 'Please wait while we confirm your payment...'}
-            {!loading && !error && 'Thank you for subscribing! Your payment has been processed successfully and your subscription is now active.'}
+            {!loading && !error && `Thank you for subscribing! Your payment has been processed successfully and your subscription is now active.${sessionData?.customer_email ? ` A confirmation email will be sent to ${sessionData.customer_email}.` : ''}`}
             {error && 'There was an issue processing your payment. Please contact support if this continues.'}
           </p>
 
