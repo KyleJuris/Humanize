@@ -45,6 +45,9 @@ try {
   if (!process.env.STRIPE_SECRET_KEY) {
     throw new Error('STRIPE_SECRET_KEY not provided');
   }
+  if (process.env.STRIPE_SECRET_KEY === 'your-stripe-secret-key-here') {
+    throw new Error('Placeholder Stripe secret key detected');
+  }
   stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
   console.log('✅ Stripe client initialized in clean routes');
 } catch (error) {

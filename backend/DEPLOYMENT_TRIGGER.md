@@ -1,23 +1,31 @@
-# Deployment Trigger
+# Deployment Trigger - URGENT FIX
 
 This file is used to trigger a new deployment on Render.
 
 ## Issue
-The backend server is running an older version without the stripe-hosted routes, causing 404 errors for:
-- GET /api/auth/me
-- GET /api/projects  
-- POST /api/stripe-hosted/create-checkout-session
+The backend server is running an older version causing 404 errors for:
+- GET /api/stripe/subscription-status
+- GET /api/stripe/session-status  
+- All /api/stripe/* endpoints
+
+## Root Cause
+The server was loading stripe-clean.js but the /subscription-status route was missing, causing 404 errors.
 
 ## Solution
-This file forces a new deployment with the latest server.js configuration that includes:
-- Stripe-hosted route registration
+This file forces a new deployment with the latest configuration that includes:
+- Added /subscription-status route to stripe-clean.js
+- Added authentication middleware to stripe-clean.js
+- Fixed profiles API null ID constraint error
 - Enhanced debugging logs
-- Proper API endpoint configuration
 
 ## Files Updated
+- backend/routes/stripe-clean.js (added subscription-status route + auth middleware)
+- backend/routes/profiles.js (fixed null ID constraint)
 - backend/server.js (route registration)
-- backend/routes/stripe-hosted.js (new file)
-- backend/lib/stripe.js (new file)
-- backend/package.json (added stripe dependency)
 
-Generated: 2025-09-26T03:59:52Z
+## Critical Fixes
+1. Added missing GET /api/stripe/subscription-status endpoint
+2. Fixed profiles API null ID constraint error (code 23502)
+3. Added proper authentication middleware to stripe routes
+
+Generated: 2025-10-01T07:10:00Z
