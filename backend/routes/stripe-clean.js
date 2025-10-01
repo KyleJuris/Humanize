@@ -1,15 +1,6 @@
 const express = require('express');
 const router = express.Router();
 
-// Handle OPTIONS requests for CORS preflight
-router.options('*', (req, res) => {
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-  res.header('Access-Control-Allow-Credentials', 'false');
-  res.status(200).end();
-});
-
 // Try to load database config for authentication
 let supabaseAnon;
 try {
@@ -24,11 +15,6 @@ try {
 // Middleware to authenticate user
 const authenticateUser = async (req, res, next) => {
   try {
-    // Skip authentication for OPTIONS requests (CORS preflight)
-    if (req.method === 'OPTIONS') {
-      return next();
-    }
-
     if (!supabaseAnon) {
       return res.status(503).json({ error: 'Authentication service unavailable' });
     }
