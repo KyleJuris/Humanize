@@ -2,6 +2,16 @@ const express = require('express');
 const router = express.Router();
 const Stripe = require('stripe');
 
+// Handle preflight OPTIONS requests for CORS
+router.options('*', (req, res) => {
+  console.log('🔍 Stripe route OPTIONS preflight request');
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.header('Access-Control-Max-Age', '86400'); // 24 hours
+  res.status(200).end();
+});
+
 // Try to load database config, but don't fail if it's not available
 let supabase, supabaseAnon;
 try {
