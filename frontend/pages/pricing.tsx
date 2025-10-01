@@ -270,24 +270,8 @@ export default function PricingPage() {
                 textAlign: 'center',
                 marginBottom: '0.5rem'
               }}>
-                ${billingCycle === 'annual' ? plans.basic.annualPrice : plans.basic.monthlyPrice}
-                <span style={{ fontSize: '1rem', color: '#6b7280', fontWeight: 'normal' }}>/month</span>
+                Free
               </div>
-
-              {billingCycle === 'annual' && (
-                <div style={{
-                  textAlign: 'center',
-                  marginBottom: '1rem'
-                }}>
-                  <span style={{
-                    textDecoration: 'line-through',
-                    color: '#6b7280',
-                    fontSize: '1rem'
-                  }}>
-                    ${plans.basic.monthlyPrice}
-                  </span>
-                </div>
-              )}
 
               <div style={{
                 fontSize: '0.9rem',

@@ -125,6 +125,7 @@ router.get('/me', async (req, res) => {
       const { data: newProfile, error: createError } = await supabase
         .from('profiles')
         .insert({
+          id: user.id, // Use user ID as profile ID (consistent with database design)
           user_id: user.id,
           email: user.email || 'unknown@example.com', // Ensure email is never null
           user_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User', // Ensure user_name is never null
