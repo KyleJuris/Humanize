@@ -15,6 +15,9 @@ try {
 // Middleware to authenticate user
 const authenticateUser = async (req, res, next) => {
   try {
+    // Let preflight requests pass through
+    if (req.method === 'OPTIONS') return res.sendStatus(200);
+    
     if (!supabaseAnon) {
       return res.status(503).json({ error: 'Authentication service unavailable' });
     }

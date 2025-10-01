@@ -5,6 +5,9 @@ const router = express.Router();
 // Middleware to authenticate user
 const authenticateUser = async (req, res, next) => {
   try {
+    // Let preflight requests pass through
+    if (req.method === 'OPTIONS') return res.sendStatus(200);
+    
     const token = req.headers.authorization?.replace('Bearer ', '');
     
     if (!token) {
