@@ -2,6 +2,16 @@ const express = require('express');
 const { supabase, supabaseAnon } = require('../config/database');
 const router = express.Router();
 
+// Handle preflight OPTIONS requests for CORS
+router.options('*', (req, res) => {
+  console.log('🔍 Auth route OPTIONS preflight request');
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.header('Access-Control-Max-Age', '86400'); // 24 hours
+  res.status(200).end();
+});
+
 // Sign up with email
 router.post('/signup', async (req, res) => {
   try {
