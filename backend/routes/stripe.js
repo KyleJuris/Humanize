@@ -18,6 +18,9 @@ try {
 // Middleware to authenticate user
 const authenticateUser = async (req, res, next) => {
   try {
+    // Let preflight requests pass through
+    if (req.method === 'OPTIONS') return res.sendStatus(200);
+    
     if (!supabaseAnon) {
       return res.status(503).json({ error: 'Authentication service unavailable' });
     }
@@ -200,11 +203,15 @@ router.get('/test', (req, res) => {
 // Get session status
 router.get('/session-status', async (req, res) => {
   try {
+    console.log('🔍 Session status endpoint called with query:', req.query);
+    
     if (!stripe) {
-      return res.status(503).json({ error: 'Stripe service unavailable' });
+      return res.status(503).json({ 
+        error: 'Stripe service unavailable',
+        message: 'Stripe not initialized'
+      });
     }
 
-    console.log('🔍 Session status endpoint called with query:', req.query);
     const { session_id } = req.query;
     
     if (!session_id) {
@@ -216,19 +223,33 @@ router.get('/session-status', async (req, res) => {
     console.log('🔍 Session retrieved:', { id: session.id, status: session.status });
 
     res.json({
+      message: 'Session status retrieved successfully',
       status: session.status,
-      customer_email: session.customer_details?.email
+      customer_email: session.customer_details?.email,
+      timestamp: new Date().toISOString()
     });
 
   } catch (error) {
     console.error('Error retrieving session status:', error);
-    res.status(400).json({ error: error.message });
+    res.status(400).json({ 
+      error: error.message,
+      message: 'Error occurred'
+    });
   }
 });
 
 // Get subscription status
 router.get('/subscription-status', authenticateUser, async (req, res) => {
   try {
+    console.log('🔍 Getting subscription status for user:', req.user.email);
+    
+    if (!stripe) {
+      return res.status(503).json({ 
+        error: 'Stripe service unavailable',
+        message: 'Stripe not initialized'
+      });
+    }
+
     const userId = req.user.id;
     const userEmail = req.user.email;
 
@@ -239,10 +260,15 @@ router.get('/subscription-status', authenticateUser, async (req, res) => {
     });
 
     if (customers.data.length === 0) {
-      return res.json({ hasSubscription: false });
+      console.log('🔍 No customer found for email:', userEmail);
+      return res.json({ 
+        hasSubscription: false,
+        message: 'No customer found'
+      });
     }
 
     const customer = customers.data[0];
+    console.log('🔍 Found customer:', customer.id);
 
     // Get active subscriptions
     const subscriptions = await stripe.subscriptions.list({
@@ -252,10 +278,16 @@ router.get('/subscription-status', authenticateUser, async (req, res) => {
     });
 
     if (subscriptions.data.length === 0) {
-      return res.json({ hasSubscription: false });
+      console.log('🔍 No active subscriptions found for customer:', customer.id);
+      return res.json({ 
+        hasSubscription: false,
+        message: 'No active subscription found'
+      });
     }
 
     const subscription = subscriptions.data[0];
+    console.log('🔍 Found active subscription:', subscription.id);
+
     const product = await stripe.products.retrieve(subscription.items.data[0].price.product);
 
     res.json({
@@ -266,12 +298,72 @@ router.get('/subscription-status', authenticateUser, async (req, res) => {
         currentPeriodEnd: subscription.current_period_end,
         productName: product.name,
         productId: product.id
-      }
+      },
+      message: 'Subscription status retrieved successfully'
     });
 
   } catch (error) {
     console.error('Error getting subscription status:', error);
-    res.status(400).json({ error: error.message });
+    res.status(400).json({ 
+      error: error.message,
+      message: 'Error occurred'
+    });
+  }
+});
+
+// Method Not Allowed for GET on create-checkout-session (hosted)
+router.get('/create-checkout-session', (req, res) => {
+  return res.status(405).json({ error: 'Method Not Allowed', expected: 'POST' });
+});
+
+// Create Checkout Session (Hosted) - Alternative endpoint
+router.post('/create-checkout-session', authenticateUser, async (req, res) => {
+  try {
+    console.log('[stripe-hosted] CT:', req.headers['content-type']);
+    console.log('[stripe-hosted] typeof req.body:', typeof req.body);
+
+    // Normalize the body to an object even if a proxy left it as string/Buffer.
+    let body = req.body ?? {};
+    if (typeof body === 'string') {
+      try { body = JSON.parse(body); } catch { /* ignore */ }
+    }
+    if (Buffer.isBuffer(body)) {
+      try { body = JSON.parse(body.toString('utf8')); } catch { /* ignore */ }
+    }
+
+    const { priceId, success_url, cancel_url } = body || {};
+    if (!priceId) {
+      return res.status(400).json({ error: 'Missing priceId' });
+    }
+
+    if (!stripe) {
+      return res.status(503).json({ error: 'Stripe service unavailable' });
+    }
+
+    // Compose absolute URLs if not provided
+    const defaultSite = process.env.NEXT_PUBLIC_SITE_URL || process.env.FRONTEND_URL || 'https://humanize-pro.vercel.app';
+    const successURL = success_url || `${defaultSite}/billing/success?session_id={CHECKOUT_SESSION_ID}`;
+    const cancelURL = cancel_url || `${defaultSite}/billing/cancel`;
+
+    // Create session
+    const session = await stripe.checkout.sessions.create({
+      mode: 'subscription',
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: successURL,
+      cancel_url: cancelURL,
+      // Attach user identity for reconciliation in webhook
+      metadata: {
+        userId: String(req.user?.id || req.user?.sub || ''),
+        email: String(req.user?.email || ''),
+        planPriceId: priceId
+      }
+    });
+
+    return res.status(200).json({ id: session.id, url: session.url });
+  } catch (err) {
+    console.error('[stripe-hosted] error:', err);
+    const status = (err && (err.statusCode || err.status)) || 500;
+    return res.status(status).json({ error: err.message || 'Internal Server Error' });
   }
 });
 
