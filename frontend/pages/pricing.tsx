@@ -404,7 +404,7 @@ export default function PricingPage() {
               </ul>
               
               <SubscribeButton
-                priceId="price_1SBQPvIxRGF259ZE76mXrkA4"
+                priceId="humanizer_pro_monthly"
                 planName="Pro"
                 style={{
                   width: '100%',
@@ -496,7 +496,7 @@ export default function PricingPage() {
               </ul>
               
               <SubscribeButton
-                priceId="price_1SBQOpIxRGF259ZEXgH7kuYV"
+                priceId="humanizer_ultra_monthly"
                 planName="Ultra"
                 style={{
                   width: '100%',

@@ -56,16 +56,63 @@ const authenticateUser = async (req, res, next) => {
 };
 
 // Initialize Stripe with secret key
-let stripe;
-try {
-  if (!process.env.STRIPE_SECRET_KEY) {
-    throw new Error('STRIPE_SECRET_KEY not provided');
+const stripe = (() => {
+  try {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      throw new Error('STRIPE_SECRET_KEY not provided');
+    }
+    const StripeLib = require('stripe');
+    const client = new StripeLib(process.env.STRIPE_SECRET_KEY, {
+      // Pin if you prefer: apiVersion: '2024-06-20'
+    });
+    console.log('✅ Stripe client initialized');
+    return client;
+  } catch (error) {
+    console.error('❌ Failed to initialize Stripe client:', error.message);
+    return null;
   }
-  stripe = Stripe(process.env.STRIPE_SECRET_KEY);
-  console.log('✅ Stripe client initialized');
-} catch (error) {
-  console.error('❌ Failed to initialize Stripe client:', error.message);
-  stripe = null;
+})();
+
+// Allowed plan keys (lookup_key values)
+const ALLOWED_LOOKUP_KEYS = new Set([
+  'humanizer_pro_monthly',
+  'humanizer_ultra_monthly'
+]);
+
+// Resolve a price from either priceId or lookup_key
+async function resolvePrice({ priceId, plan, lookup_key }) {
+  if (!stripe) throw new Error('Stripe not initialized');
+
+  // Back-compat: accept a known priceId (existing behavior)
+  if (priceId) {
+    if (!isValidPriceId(priceId)) {
+      throw new Error('Invalid priceId provided');
+    }
+    return { priceId, planLookupKey: null, productName: VALID_PRODUCTS[priceId]?.name || null };
+  }
+
+  // Prefer explicit plan or lookup_key
+  const key = plan || lookup_key;
+  if (!key) throw new Error('Provide either plan or priceId');
+  if (!ALLOWED_LOOKUP_KEYS.has(key)) {
+    throw new Error('Invalid plan key');
+  }
+
+  // Fetch the current active price by lookup_key
+  const list = await stripe.prices.list({
+    lookup_keys: [key],
+    active: true,
+    expand: ['data.product'] // so we can read product.name
+  });
+  const p = list.data[0];
+  if (!p) throw new Error(`No active price found for lookup_key=${key}`);
+
+  const resolved = {
+    priceId: p.id,
+    planLookupKey: p.lookup_key || key,
+    productName: typeof p.product === 'object' ? p.product.name : null
+  };
+  return resolved;
 }
 
 // Valid product configurations
@@ -108,87 +155,55 @@ function validateEnvironment(secretKey) {
 // Create checkout session - MAIN ENDPOINT FOR FRONTEND
 router.post('/checkout-session', authenticateUser, async (req, res) => {
   try {
-    const { priceId } = req.body;
     const userId = req.user.id;
     const userEmail = req.user.email;
 
-    console.log('=== STRIPE CHECKOUT SESSION CREATION ===');
-    console.log('User:', userEmail, 'PriceId:', priceId);
+    // Normalize request body to object
+    let body = req.body ?? {};
+    if (typeof body === 'string') { try { body = JSON.parse(body); } catch {} }
+    if (Buffer.isBuffer(body))    { try { body = JSON.parse(body.toString('utf8')); } catch {} }
 
-    // Validate required fields
-    if (!priceId) {
-      console.error('Missing priceId in request body');
-      return res.status(400).json({ 
-        error: 'priceId is required',
-        receivedData: { priceId }
-      });
+    const { priceId, plan, lookup_key, success_url, cancel_url } = body || {};
+
+    if (!stripe) {
+      return res.status(503).json({ error: 'Stripe service unavailable' });
     }
 
-    // Validate priceId against known products
-    if (!isValidPriceId(priceId)) {
-      console.error('Invalid priceId:', priceId);
-      return res.status(400).json({ 
-        error: 'Invalid priceId provided',
-        receivedPriceId: priceId,
-        validPriceIds: Object.keys(VALID_PRODUCTS),
-        validProducts: Object.values(VALID_PRODUCTS).map(p => ({ name: p.name, priceId: Object.keys(VALID_PRODUCTS).find(k => VALID_PRODUCTS[k] === p) }))
-      });
+    // Resolve price by lookup_key or accept known priceId
+    let resolved;
+    try {
+      resolved = await resolvePrice({ priceId, plan, lookup_key });
+    } catch (e) {
+      return res.status(400).json({ error: e.message });
     }
 
-    // Validate Stripe environment
-    const envValidation = validateEnvironment(process.env.STRIPE_SECRET_KEY);
-    if (!envValidation.isValid) {
-      console.error('Stripe environment validation failed:', envValidation.error);
-      return res.status(500).json({ 
-        error: 'Stripe configuration error',
-        details: envValidation.error,
-        environment: envValidation.environment
-      });
-    }
-
-    console.log('✅ Environment validation passed:', envValidation.environment);
-    console.log('✅ PriceId validation passed:', priceId, '- Product:', VALID_PRODUCTS[priceId].name);
-
-    const productInfo = VALID_PRODUCTS[priceId];
     const siteUrl = process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://humanize-pro.vercel.app';
+    const successURL = success_url || `${siteUrl}/billing/success?session_id={CHECKOUT_SESSION_ID}`;
+    const cancelURL  = cancel_url  || `${siteUrl}/billing/cancel`;
 
-    console.log('Creating Stripe checkout session with priceId:', priceId, 'for product:', productInfo.name);
-
-    // Create Stripe checkout session with absolute URLs
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
+      line_items: [{ price: resolved.priceId, quantity: 1 }],
       customer_email: userEmail,
-      success_url: `${siteUrl}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${siteUrl}/billing/cancel`,
+      success_url: successURL,
+      cancel_url: cancelURL,
       metadata: {
-        userId: userId, // Stable user identifier
-        userEmail: userEmail,
-        product_name: productInfo.name,
-        product_type: productInfo.type,
-        product_id: productInfo.productId,
-        environment: envValidation.environment
+        userId: String(userId),
+        userEmail: String(userEmail),
+        plan_lookup_key: resolved.planLookupKey || '',   // <— include for downstream logic
+        product_name: resolved.productName || '',
       },
       automatic_tax: { enabled: true },
     });
 
-    console.log('Stripe checkout session created:', session.id);
-
-    res.json({
+    return res.json({
       id: session.id,
       url: session.url,
       product: {
-        name: productInfo.name,
-        type: productInfo.type,
-        priceId: priceId,
-        productId: productInfo.productId
-      },
-      environment: envValidation.environment
+        name: resolved.productName,
+        priceId: resolved.priceId,
+        planLookupKey: resolved.planLookupKey
+      }
     });
 
   } catch (error) {
@@ -237,6 +252,7 @@ router.get('/session-status', async (req, res) => {
       status: session.status,               // 'open' | 'complete' | 'expired'
       payment_status: session.payment_status, // 'paid' | 'unpaid' | 'no_payment_required'
       customer_email: session.customer_details?.email,
+      plan_lookup_key: session.metadata?.plan_lookup_key || null,   // <— added
       timestamp: new Date().toISOString()
     });
 
@@ -281,34 +297,32 @@ router.get('/subscription-status', authenticateUser, async (req, res) => {
     const customer = customers.data[0];
     console.log('🔍 Found customer:', customer.id);
 
-    // Get active subscriptions
     const subscriptions = await stripe.subscriptions.list({
       customer: customer.id,
       status: 'active',
-      limit: 1
+      limit: 1,
+      expand: ['data.items.data.price.product']  // <— expand to access price.lookup_key & product.name
     });
 
     if (subscriptions.data.length === 0) {
-      console.log('🔍 No active subscriptions found for customer:', customer.id);
-      return res.json({ 
-        hasSubscription: false,
-        message: 'No active subscription found'
-      });
+      return res.json({ hasSubscription: false, message: 'No active subscription found' });
     }
 
-    const subscription = subscriptions.data[0];
-    console.log('🔍 Found active subscription:', subscription.id);
-
-    const product = await stripe.products.retrieve(subscription.items.data[0].price.product);
+    const sub = subscriptions.data[0];
+    const item = sub.items.data[0];
+    const price = item?.price;
+    const productName = typeof price?.product === 'object' ? price.product.name : null;
+    const planLookupKey = price?.lookup_key || null;
 
     res.json({
       hasSubscription: true,
       subscription: {
-        id: subscription.id,
-        status: subscription.status,
-        currentPeriodEnd: subscription.current_period_end,
-        productName: product.name,
-        productId: product.id
+        id: sub.id,
+        status: sub.status,
+        currentPeriodEnd: sub.current_period_end,
+        productName,
+        productId: typeof price?.product === 'object' ? price.product.id : price?.product || null,
+        planLookupKey
       },
       message: 'Subscription status retrieved successfully'
     });
@@ -330,43 +344,39 @@ router.get('/create-checkout-session', (req, res) => {
 // Create Checkout Session (Hosted) - Alternative endpoint
 router.post('/create-checkout-session', authenticateUser, async (req, res) => {
   try {
-    console.log('[stripe-hosted] CT:', req.headers['content-type']);
-    console.log('[stripe-hosted] typeof req.body:', typeof req.body);
-
-    // Normalize the body to an object even if a proxy left it as string/Buffer.
+    // Normalize the body
     let body = req.body ?? {};
-    if (typeof body === 'string') {
-      try { body = JSON.parse(body); } catch { /* ignore */ }
-    }
-    if (Buffer.isBuffer(body)) {
-      try { body = JSON.parse(body.toString('utf8')); } catch { /* ignore */ }
-    }
+    if (typeof body === 'string') { try { body = JSON.parse(body); } catch {} }
+    if (Buffer.isBuffer(body))    { try { body = JSON.parse(body.toString('utf8')); } catch {} }
 
-    const { priceId, success_url, cancel_url } = body || {};
-    if (!priceId) {
-      return res.status(400).json({ error: 'Missing priceId' });
-    }
+    const { priceId, plan, lookup_key, success_url, cancel_url } = body || {};
 
     if (!stripe) {
       return res.status(503).json({ error: 'Stripe service unavailable' });
     }
 
-    // Compose absolute URLs if not provided
+    // Resolve price by lookup_key or accept known priceId
+    let resolved;
+    try {
+      resolved = await resolvePrice({ priceId, plan, lookup_key });
+    } catch (e) {
+      return res.status(400).json({ error: e.message });
+    }
+
     const defaultSite = process.env.NEXT_PUBLIC_SITE_URL || process.env.FRONTEND_URL || 'https://humanize-pro.vercel.app';
     const successURL = success_url || `${defaultSite}/billing/success?session_id={CHECKOUT_SESSION_ID}`;
-    const cancelURL = cancel_url || `${defaultSite}/billing/cancel`;
+    const cancelURL  = cancel_url  || `${defaultSite}/billing/cancel`;
 
-    // Create session
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
-      line_items: [{ price: priceId, quantity: 1 }],
+      line_items: [{ price: resolved.priceId, quantity: 1 }],
       success_url: successURL,
       cancel_url: cancelURL,
-      // Attach user identity for reconciliation in webhook
       metadata: {
         userId: String(req.user?.id || req.user?.sub || ''),
         email: String(req.user?.email || ''),
-        planPriceId: priceId
+        plan_lookup_key: resolved.planLookupKey || '',
+        product_name: resolved.productName || ''
       }
     });
 

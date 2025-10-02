@@ -16,10 +16,10 @@ if (!stripePublishableKey) {
 
 const stripePromise = loadStripe(stripePublishableKey!);
 
-// Stripe price IDs
-const PRICE_IDS = {
-  pro: 'price_1SBQPvIxRGF259ZE76mXrkA4', // Humanizer Pro
-  ultra: 'price_1SBQOpIxRGF259ZEXgH7kuYV' // Humanizer Ultra
+// Stripe plan lookup keys
+const PLAN_LOOKUP_KEYS = {
+  pro: 'humanizer_pro_monthly', // Humanizer Pro
+  ultra: 'humanizer_ultra_monthly' // Humanizer Ultra
 };
 
 interface StripeCheckoutProps {
@@ -54,9 +54,9 @@ const CheckoutForm: React.FC<StripeCheckoutProps> = ({ planType, onSuccess, onEr
       setError(null);
       
       console.log('Creating checkout session for plan:', planType);
-      console.log('Using price ID:', PRICE_IDS[planType]);
+      console.log('Using plan lookup key:', PLAN_LOOKUP_KEYS[planType]);
       
-      const response = await api.createCheckoutSession(PRICE_IDS[planType]);
+      const response = await api.createCheckoutSession(PLAN_LOOKUP_KEYS[planType]);
       
       console.log('API response:', response);
       

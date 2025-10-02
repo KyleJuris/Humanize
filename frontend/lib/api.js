@@ -238,17 +238,27 @@ class ApiClient {
   }
 
   // Stripe subscription methods - all handled by backend for security
-  async createCheckoutSession(priceId) {
+  async createCheckoutSession(planOrPriceId) {
+    // Support both new plan format and legacy priceId
+    const body = planOrPriceId.startsWith('price_') 
+      ? { priceId: planOrPriceId }
+      : { plan: planOrPriceId };
+    
     return this.request('/stripe/checkout-session', {
       method: 'POST',
-      body: JSON.stringify({ priceId }),
+      body: JSON.stringify(body),
     });
   }
 
-  async createHostedCheckoutSession(priceId, customerEmail) {
+  async createHostedCheckoutSession(planOrPriceId, customerEmail) {
+    // Support both new plan format and legacy priceId
+    const body = planOrPriceId.startsWith('price_') 
+      ? { priceId: planOrPriceId, customerEmail }
+      : { plan: planOrPriceId, customerEmail };
+    
     return this.request('/stripe/create-checkout-session', {
       method: 'POST',
-      body: JSON.stringify({ priceId, customerEmail }),
+      body: JSON.stringify(body),
     });
   }
 

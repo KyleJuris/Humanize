@@ -285,7 +285,7 @@ export default function ProfilePage() {
                   fontWeight: '600',
                   cursor: 'pointer'
                 }}>
-                  Manage Subscription
+                  Cancel Subscription
                 </button>
               </div>
 
