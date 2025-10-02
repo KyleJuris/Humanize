@@ -2,9 +2,29 @@ const express = require('express');
 const router = express.Router();
 const Stripe = require('stripe');
 
+// Webhook test endpoint for debugging
+async function handleWebhookTest(req, res) {
+  console.log('🧪 Webhook test endpoint called');
+  console.log('Headers:', req.headers);
+  console.log('Body type:', typeof req.body);
+  console.log('Body length:', req.body ? req.body.length : 'undefined');
+  res.json({ 
+    message: 'Webhook test endpoint working',
+    timestamp: new Date().toISOString(),
+    bodyReceived: !!req.body,
+    headers: Object.keys(req.headers)
+  });
+}
+
 // Stripe webhook handler function
 async function handleStripeWebhook(req, res) {
   try {
+    console.log('🎯 Webhook received at:', new Date().toISOString());
+    console.log('🎯 Headers received:', Object.keys(req.headers));
+    console.log('🎯 Stripe signature present:', !!req.headers['stripe-signature']);
+    console.log('🎯 Body type:', typeof req.body);
+    console.log('🎯 Body length:', req.body ? req.body.length : 'undefined');
+    
     const sig = req.headers['stripe-signature'];
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
     
@@ -25,7 +45,13 @@ async function handleStripeWebhook(req, res) {
       return res.status(200).json({ received: true });
     }
 
-    console.log('✅ Webhook signature verified, event type:', event.type);
+    console.log('✅ Webhook signature verified');
+    console.log('📨 Event details:', {
+      type: event.type,
+      id: event.id,
+      created: event.created,
+      livemode: event.livemode
+    });
 
     // Handle only checkout.session.completed events
     if (event.type === 'checkout.session.completed') {
@@ -39,10 +65,28 @@ async function handleStripeWebhook(req, res) {
       const userEmail = session.metadata?.userEmail;
       const productName = session.metadata?.product_name;
       const productType = session.metadata?.product_type;
-      
+
+      // Enhanced logging
+      console.log('Raw session metadata:', JSON.stringify(session.metadata, null, 2));
+      console.log('Extracted values:', {
+        userId: userId,
+        userEmail: userEmail,
+        productName: productName,
+        productType: productType,
+        customer: session.customer,
+        subscription: session.subscription
+      });
+
+      // Validate all required fields
       if (!userId || !userEmail) {
         console.error('❌ Missing required metadata: userId or userEmail');
+        console.error('❌ Available metadata keys:', Object.keys(session.metadata || {}));
         return res.status(200).json({ received: true });
+      }
+
+      if (!productType) {
+        console.error('❌ Missing product_type in metadata - subscription_type will be null');
+        console.error('❌ This will result in user remaining on free plan');
       }
       
       console.log('Updating user subscription in database...');
@@ -74,6 +118,9 @@ async function handleStripeWebhook(req, res) {
       } else {
         console.log('⚠️ Database not available, skipping subscription update');
       }
+    } else {
+      console.log('ℹ️ Ignoring event type:', event.type);
+      console.log('ℹ️ We only process: checkout.session.completed');
     }
     
     // Always respond with 200 to acknowledge receipt
@@ -553,3 +600,4 @@ router.post('/cancel-subscription', authenticateUser, async (req, res) => {
 
 module.exports = router;
 module.exports.handleStripeWebhook = handleStripeWebhook;
+module.exports.handleWebhookTest = handleWebhookTest;
