@@ -2,20 +2,6 @@ const express = require('express');
 const router = express.Router();
 const Stripe = require('stripe');
 
-// Webhook test endpoint for debugging
-async function handleWebhookTest(req, res) {
-  console.log('🧪 Webhook test endpoint called');
-  console.log('Headers:', req.headers);
-  console.log('Body type:', typeof req.body);
-  console.log('Body length:', req.body ? req.body.length : 'undefined');
-  res.json({ 
-    message: 'Webhook test endpoint working',
-    timestamp: new Date().toISOString(),
-    bodyReceived: !!req.body,
-    headers: Object.keys(req.headers)
-  });
-}
-
 // Stripe webhook handler function
 async function handleStripeWebhook(req, res) {
   try {
@@ -76,7 +62,7 @@ async function handleStripeWebhook(req, res) {
         customer: session.customer,
         subscription: session.subscription
       });
-
+      
       // Validate all required fields
       if (!userId || !userEmail) {
         console.error('❌ Missing required metadata: userId or userEmail');
@@ -598,6 +584,18 @@ router.post('/cancel-subscription', authenticateUser, async (req, res) => {
   }
 });
 
+// Webhook test endpoint for debugging
+router.post('/webhook-test', (req, res) => {
+  console.log('🧪 Webhook test endpoint called');
+  console.log('Headers:', req.headers);
+  console.log('Body type:', typeof req.body);
+  console.log('Body length:', req.body ? req.body.length : 'undefined');
+  res.json({ 
+    message: 'Webhook test endpoint working',
+    timestamp: new Date().toISOString(),
+    bodyReceived: !!req.body
+  });
+});
+
 module.exports = router;
 module.exports.handleStripeWebhook = handleStripeWebhook;
-module.exports.handleWebhookTest = handleWebhookTest;
