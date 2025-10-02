@@ -83,17 +83,22 @@ const ALLOWED_LOOKUP_KEYS = new Set([
 async function resolvePrice({ priceId, plan, lookup_key }) {
   if (!stripe) throw new Error('Stripe not initialized');
 
-  // Back-compat: accept a known priceId (existing behavior)
+  // If priceId is actually a lookup key (e.g. "humanizer_pro_monthly"), allow it
   if (priceId) {
-    if (!isValidPriceId(priceId)) {
+    if (isValidPriceId(priceId)) {
+      return {
+        priceId,
+        planLookupKey: null,
+        productName: VALID_PRODUCTS[priceId]?.name || null,
+        productType: VALID_PRODUCTS[priceId]?.type || null
+      };
+    }
+    // Treat known lookup keys sent under "priceId" as lookup flow
+    if (ALLOWED_LOOKUP_KEYS.has(priceId)) {
+      lookup_key = priceId;
+    } else {
       throw new Error('Invalid priceId provided');
     }
-    return { 
-      priceId, 
-      planLookupKey: null, 
-      productName: VALID_PRODUCTS[priceId]?.name || null,
-      productType: VALID_PRODUCTS[priceId]?.type || null
-    };
   }
 
   // Prefer explicit plan or lookup_key
@@ -276,57 +281,84 @@ router.get('/session-status', async (req, res) => {
   }
 });
 
-// GET /api/stripe/subscription-status
+// Get subscription status
 router.get('/subscription-status', authenticateUser, async (req, res) => {
   try {
+    console.log('🔍 Getting subscription status for user:', req.user.email);
+    
     if (!stripe) {
-      return res.status(503).json({
+      return res.status(503).json({ 
         error: 'Stripe service unavailable',
         message: 'Stripe not initialized'
       });
     }
 
+    const userId = req.user.id;
     const userEmail = req.user.email;
 
-    // 1) Find Stripe customer by email
-    const customers = await stripe.customers.list({ email: userEmail, limit: 1 });
-    if (customers.data.length === 0) {
-      return res.json({ hasSubscription: false, message: 'No customer found' });
-    }
-    const customer = customers.data[0];
+    // Find customer by email
+    const customers = await stripe.customers.list({
+      email: userEmail,
+      limit: 1
+    });
 
-    // 2) Get active subscription(s) with **shallow** expands (avoid product depth)
-    const subs = await stripe.subscriptions.list({
+    if (customers.data.length === 0) {
+      console.log('🔍 No customer found for email:', userEmail);
+      return res.json({ 
+        hasSubscription: false,
+        message: 'No customer found'
+      });
+    }
+
+    const customer = customers.data[0];
+    console.log('🔍 Found customer:', customer.id);
+
+    const subscriptions = await stripe.subscriptions.list({
       customer: customer.id,
       status: 'active',
       limit: 1,
-      expand: ['data.items.data.price'] // keep it shallow; no ".product"
+      // Keep expansions shallow to avoid "expand more than 4 levels" errors
+      expand: ['data.items.data.price', 'data.latest_invoice.payment_intent']
     });
 
-    if (subs.data.length === 0) {
+    if (subscriptions.data.length === 0) {
       return res.json({ hasSubscription: false, message: 'No active subscription found' });
     }
 
-    const sub = subs.data[0];
-    const firstItem = sub.items.data[0];
-    const price = firstItem?.price;
+    const sub = subscriptions.data[0];
+    const item = sub.items.data[0];
+    const price = item?.price;
+    let productName = null;
+    const planLookupKey = price?.lookup_key || null;
 
-    // Only include fields you actually use
-    return res.json({
+    // Safely retrieve the product only if we need its name and it's not already expanded
+    if (price?.product) {
+      if (typeof price.product === 'string') {
+        const prod = await stripe.products.retrieve(price.product);
+        productName = prod?.name || null;
+      } else {
+        productName = price.product?.name || null;
+      }
+    }
+
+    res.json({
       hasSubscription: true,
       subscription: {
         id: sub.id,
         status: sub.status,
         currentPeriodEnd: sub.current_period_end,
-        planLookupKey: price?.lookup_key || null
-      }
+        productName,
+        productId: typeof price?.product === 'object' ? price.product.id : price?.product || null,
+        planLookupKey
+      },
+      message: 'Subscription status retrieved successfully'
     });
 
   } catch (error) {
     console.error('Error getting subscription status:', error);
-    res.status(400).json({
-      error: error.type || 'StripeError',
-      message: error.message || 'Error occurred'
+    res.status(400).json({ 
+      error: error.message,
+      message: 'Error occurred'
     });
   }
 });
