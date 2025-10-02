@@ -276,43 +276,36 @@ router.get('/session-status', async (req, res) => {
   }
 });
 
-// Get subscription status
+// Get subscription status (FIXED: avoid deep expands)
 router.get('/subscription-status', authenticateUser, async (req, res) => {
   try {
     console.log('🔍 Getting subscription status for user:', req.user.email);
-    
+
     if (!stripe) {
-      return res.status(503).json({ 
+      return res.status(503).json({
         error: 'Stripe service unavailable',
         message: 'Stripe not initialized'
       });
     }
 
-    const userId = req.user.id;
     const userEmail = req.user.email;
 
-    // Find customer by email
-    const customers = await stripe.customers.list({
-      email: userEmail,
-      limit: 1
-    });
-
+    // 1) Find customer
+    const customers = await stripe.customers.list({ email: userEmail, limit: 1 });
     if (customers.data.length === 0) {
       console.log('🔍 No customer found for email:', userEmail);
-      return res.json({ 
-        hasSubscription: false,
-        message: 'No customer found'
-      });
+      return res.json({ hasSubscription: false, message: 'No customer found' });
     }
-
     const customer = customers.data[0];
     console.log('🔍 Found customer:', customer.id);
 
+    // 2) Get active subscription(s) with SAFE expands
     const subscriptions = await stripe.subscriptions.list({
       customer: customer.id,
       status: 'active',
       limit: 1,
-      expand: ['data.items.data.price.product']  // <— expand to access price.lookup_key & product.name
+      // Keep it shallow: expand only to price, not product
+      expand: ['data.items.data.price', 'data.latest_invoice.payment_intent']
     });
 
     if (subscriptions.data.length === 0) {
@@ -322,17 +315,36 @@ router.get('/subscription-status', authenticateUser, async (req, res) => {
     const sub = subscriptions.data[0];
     const item = sub.items.data[0];
     const price = item?.price;
-    const productName = typeof price?.product === 'object' ? price.product.name : null;
+
+    // 3) Fetch product(s) in a second call to avoid deep expand limits
+    let productName = null;
+    let productId = typeof price?.product === 'string' ? price.product : price?.product?.id || null;
+
+    if (typeof price?.product === 'string') {
+      try {
+        const productObj = await stripe.products.retrieve(price.product);
+        productName = productObj?.name || null;
+        productId = productObj?.id || productId || null;
+      } catch (e) {
+        console.warn('⚠️ Failed to retrieve product', price?.product, e?.message);
+      }
+    } else if (price?.product && typeof price.product === 'object') {
+      productName = price.product.name || null;
+      productId = price.product.id || productId || null;
+    }
+
     const planLookupKey = price?.lookup_key || null;
 
-    res.json({
+    return res.json({
       hasSubscription: true,
       subscription: {
         id: sub.id,
         status: sub.status,
         currentPeriodEnd: sub.current_period_end,
+        latestInvoiceStatus: sub.latest_invoice?.status || null,
+        paymentIntentStatus: sub.latest_invoice?.payment_intent?.status || null,
         productName,
-        productId: typeof price?.product === 'object' ? price.product.id : price?.product || null,
+        productId,
         planLookupKey
       },
       message: 'Subscription status retrieved successfully'
@@ -340,7 +352,7 @@ router.get('/subscription-status', authenticateUser, async (req, res) => {
 
   } catch (error) {
     console.error('Error getting subscription status:', error);
-    res.status(400).json({ 
+    res.status(400).json({
       error: error.message,
       message: 'Error occurred'
     });
