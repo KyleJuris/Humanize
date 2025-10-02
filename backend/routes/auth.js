@@ -130,9 +130,8 @@ router.get('/me', async (req, res) => {
           email: user.email || 'unknown@example.com', // Ensure email is never null
           user_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User', // Ensure user_name is never null
           avatar_url: user.user_metadata?.avatar_url || null,
-          plan: 'free',
           subscription_status: 'inactive',
-          subscription_type: null,
+          subscription_type: null, // NULL = free plan
           subscription_product: null,
           stripe_customer_id: null,
           stripe_subscription_id: null,

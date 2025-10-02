@@ -28,14 +28,15 @@ export default function ProfilePage() {
       console.log('✅ Profile data received:', profileData)
       setProfile(profileData)
       
-      // Set word limits based on plan
+      // Set word limits based on subscription_type (NULL = free)
       const limits = {
         free: { monthly: 5000 },
         pro: { monthly: 15000 },
         ultra: { monthly: 30000 }
       }
       
-      const planLimits = limits[profileData.plan] || limits.free
+      const subscriptionType = profileData.subscription_type || 'free'
+      const planLimits = limits[subscriptionType] || limits.free
       setWordLimits(planLimits)
     } catch (error) {
       console.error('❌ Error fetching profile:', error)
@@ -233,14 +234,14 @@ export default function ProfilePage() {
                 }}>
                   <div>
                     <div style={{ fontWeight: '500', color: '#1f2937' }}>
-                      {profile?.plan ? profile.plan.charAt(0).toUpperCase() + profile.plan.slice(1) : 'Free'} Plan
+                      {profile?.subscription_type ? profile.subscription_type.charAt(0).toUpperCase() + profile.subscription_type.slice(1) : 'Free'} Plan
                     </div>
                     <div style={{ color: '#6b7280', fontSize: '0.9rem' }}>
                       {wordLimits.monthly.toLocaleString()} words/month
                     </div>
                   </div>
                   <div style={{ fontWeight: '600', color: '#10b981' }}>
-                    {profile?.plan === 'free' ? 'Free' : profile?.plan === 'pro' ? '$19/month' : profile?.plan === 'ultra' ? '$39/month' : 'Free'}
+                    {!profile?.subscription_type ? 'Free' : profile?.subscription_type === 'pro' ? '$19/month' : profile?.subscription_type === 'ultra' ? '$39/month' : 'Free'}
                   </div>
                 </div>
                 

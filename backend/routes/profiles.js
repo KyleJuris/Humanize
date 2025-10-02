@@ -53,9 +53,8 @@ router.get('/', authenticateUser, async (req, res) => {
           email: req.user.email || 'unknown@example.com', // Ensure email is never null
           user_name: req.user.user_metadata?.full_name || req.user.email?.split('@')[0] || 'User', // Ensure user_name is never null
           avatar_url: req.user.user_metadata?.avatar_url || null,
-          plan: 'free',
           subscription_status: 'inactive',
-          subscription_type: null,
+          subscription_type: null, // NULL = free plan
           subscription_product: null,
           stripe_customer_id: null,
           stripe_subscription_id: null,
@@ -103,12 +102,11 @@ router.get('/', authenticateUser, async (req, res) => {
 // Update user profile
 router.put('/', authenticateUser, async (req, res) => {
   try {
-    const { user_name, avatar_url, plan, words_used_this_month } = req.body;
+    const { user_name, avatar_url, words_used_this_month } = req.body;
 
     const updateData = {
       user_name,
       avatar_url,
-      plan,
       updated_at: new Date().toISOString()
     };
 
@@ -138,7 +136,7 @@ router.put('/', authenticateUser, async (req, res) => {
 // Create user profile (called after successful auth)
 router.post('/', authenticateUser, async (req, res) => {
   try {
-    const { user_name, avatar_url, plan } = req.body;
+    const { user_name, avatar_url } = req.body;
 
     const { data, error } = await supabase
       .from('profiles')
@@ -148,9 +146,8 @@ router.post('/', authenticateUser, async (req, res) => {
         email: req.user.email || 'unknown@example.com', // Ensure email is never null
         user_name: user_name || req.user.email?.split('@')[0] || 'User', // Ensure user_name is never null
         avatar_url: avatar_url || null,
-        plan: plan || 'free',
         subscription_status: 'inactive',
-        subscription_type: null,
+        subscription_type: null, // NULL = free plan
         subscription_product: null,
         stripe_customer_id: null,
         stripe_subscription_id: null,

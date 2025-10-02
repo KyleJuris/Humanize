@@ -67,14 +67,15 @@ export default function HumanizerPage() {
       if (profile && typeof profile === 'object') {
         setUserProfile(profile)
         
-        // Set word limits based on plan
+        // Set word limits based on subscription_type (NULL = free)
         const limits = {
           free: { perRequest: 500, monthly: 5000 },
           pro: { perRequest: 1500, monthly: 15000 },
           ultra: { perRequest: 3000, monthly: 30000 }
         }
         
-        const planLimits = limits[profile.plan] || limits.free
+        const subscriptionType = profile.subscription_type || 'free'
+        const planLimits = limits[subscriptionType] || limits.free
         setWordLimits(planLimits)
         setMonthlyUsage(profile.words_used_this_month || 0)
       } else {

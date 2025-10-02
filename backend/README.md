@@ -54,7 +54,7 @@
 - `created_at` (TIMESTAMPTZ)
 - `updated_at` (TIMESTAMPTZ)
 - `avatar_url` (TEXT)
-- `plan` (TEXT, default: 'free')
+- `subscription_type` (TEXT, NULL = free plan)
 - `stripe_customer_id` (TEXT)
 - `email` (TEXT)
 - `user_name` (TEXT)

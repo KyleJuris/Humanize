@@ -191,7 +191,7 @@ router.post('/humanize', authenticateUser, async (req, res) => {
     // Get user profile to check limits
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('plan, words_used_this_month')
+      .select('subscription_type, words_used_this_month')
       .eq('user_id', req.user.id)
       .single();
 
@@ -200,20 +200,21 @@ router.post('/humanize', authenticateUser, async (req, res) => {
       return res.status(500).json({ error: 'Failed to fetch user profile' });
     }
 
-    // Define word limits based on plan
+    // Define word limits based on subscription_type (NULL = free)
     const wordLimits = {
       free: { perRequest: 500, monthly: 5000 },
       pro: { perRequest: 1500, monthly: 15000 },
       ultra: { perRequest: 3000, monthly: 30000 }
     };
 
-    const limits = wordLimits[profile.plan] || wordLimits.free;
+    const subscriptionType = profile.subscription_type || 'free'
+    const limits = wordLimits[subscriptionType] || wordLimits.free;
     const currentUsage = profile.words_used_this_month || 0;
 
     // Check per-request limit
     if (wordCount > limits.perRequest) {
       return res.status(400).json({ 
-        error: `Text exceeds ${limits.perRequest} words per request limit for ${profile.plan} plan`,
+        error: `Text exceeds ${limits.perRequest} words per request limit for ${subscriptionType} plan`,
         limit: limits.perRequest,
         current: wordCount
       });
@@ -233,7 +234,7 @@ router.post('/humanize', authenticateUser, async (req, res) => {
     console.log('📝 Text length:', text.length);
     console.log('📊 Word count:', wordCount);
     console.log('🎛️ Settings:', { intensity, tone });
-    console.log('👤 User plan:', profile.plan);
+    console.log('👤 User subscription:', subscriptionType);
     console.log('📈 Current usage:', currentUsage, '/', limits.monthly);
 
     // Create the prompt based on settings
@@ -282,7 +283,7 @@ router.post('/humanize', authenticateUser, async (req, res) => {
       wordCount,
       monthlyUsage: newUsage,
       monthlyLimit: limits.monthly,
-      plan: profile.plan
+      subscriptionType: subscriptionType
     });
 
   } catch (error) {
