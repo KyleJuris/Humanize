@@ -26,7 +26,17 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(morgan('combined'));
 
-// Now apply express.json() middleware for all routes
+// Import stripe routes to access webhook handler
+const stripeRoutes = require('./routes/stripe');
+
+// Stripe webhook handler - MUST be before express.json() for raw body access
+app.post(
+  '/api/stripe/webhook',
+  express.raw({ type: 'application/json' }),
+  stripeRoutes.handleStripeWebhook
+);
+
+// Now apply express.json() middleware for all other routes
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -48,7 +58,7 @@ try {
   const authRoutes = require('./routes/auth');
   const projectsRoutes = require('./routes/projects');
   const profilesRoutes = require('./routes/profiles');
-  const stripeRoutes = require('./routes/stripe');
+  // stripeRoutes already imported above for webhook handler
   console.log(' Route modules loaded successfully');
 
   console.log(' Registering API routes...');

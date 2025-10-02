@@ -597,5 +597,6 @@ router.post('/webhook-test', (req, res) => {
   });
 });
 
+// Export both the router and the webhook handler
+router.handleStripeWebhook = handleStripeWebhook;
 module.exports = router;
-module.exports.handleStripeWebhook = handleStripeWebhook;
