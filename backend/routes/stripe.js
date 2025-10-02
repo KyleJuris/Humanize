@@ -234,7 +234,8 @@ router.get('/session-status', async (req, res) => {
 
     res.json({
       message: 'Session status retrieved successfully',
-      status: session.status,
+      status: session.status,               // 'open' | 'complete' | 'expired'
+      payment_status: session.payment_status, // 'paid' | 'unpaid' | 'no_payment_required'
       customer_email: session.customer_details?.email,
       timestamp: new Date().toISOString()
     });

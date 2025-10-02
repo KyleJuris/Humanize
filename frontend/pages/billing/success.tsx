@@ -13,16 +13,25 @@ const BillingSuccess: React.FC = () => {
   const [isComplete, setIsComplete] = useState(false);
 
   useEffect(() => {
-    if (session_id) {
+    // Wait until Next.js has hydrated the router (very important)
+    if (!router.isReady) return;
+
+    if (typeof session_id === 'string' && session_id.length > 0) {
       // Validate the session status with Stripe
       const validateSession = async () => {
         try {
           setLoading(true);
+          setError(null); // clear any earlier "No session ID" or transient errors
           console.log('Validating session:', session_id);
           const sessionData = await api.getSessionStatus(session_id as string);
           console.log('Session data received:', sessionData);
-          
-          if (sessionData.status === 'complete') {
+
+          // Accept either 'complete' (session) or 'paid' (payment status)
+          const ok =
+            sessionData?.status === 'complete' ||
+            sessionData?.payment_status === 'paid';
+
+          if (ok) {
             setSessionData(sessionData);
             setIsComplete(true);
           } else {
@@ -39,10 +48,11 @@ const BillingSuccess: React.FC = () => {
 
       validateSession();
     } else {
+      // Router is ready but no session id in URL
       setLoading(false);
       setError('No session ID provided');
     }
-  }, [session_id]);
+  }, [router.isReady, session_id]);
 
   // Auto-redirect to humanizer after 5 seconds
   useEffect(() => {
