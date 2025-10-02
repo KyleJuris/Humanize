@@ -2,6 +2,89 @@ const express = require('express');
 const router = express.Router();
 const Stripe = require('stripe');
 
+// Stripe webhook handler function
+async function handleStripeWebhook(req, res) {
+  try {
+    const sig = req.headers['stripe-signature'];
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    
+    if (!webhookSecret) {
+      console.error('❌ STRIPE_WEBHOOK_SECRET not configured');
+      return res.status(200).json({ received: true });
+    }
+
+    // Initialize Stripe if not already done
+    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    
+    // Verify webhook signature
+    let event;
+    try {
+      event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+    } catch (err) {
+      console.error('❌ Webhook signature verification failed:', err.message);
+      return res.status(200).json({ received: true });
+    }
+
+    console.log('✅ Webhook signature verified, event type:', event.type);
+
+    // Handle only checkout.session.completed events
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object;
+      console.log('=== CHECKOUT SESSION COMPLETED ===');
+      console.log('Session ID:', session.id);
+      console.log('Metadata:', session.metadata);
+      
+      // Extract required metadata
+      const userId = session.metadata?.userId;
+      const userEmail = session.metadata?.userEmail;
+      const productName = session.metadata?.product_name;
+      const productType = session.metadata?.product_type;
+      
+      if (!userId || !userEmail) {
+        console.error('❌ Missing required metadata: userId or userEmail');
+        return res.status(200).json({ received: true });
+      }
+      
+      console.log('Updating user subscription in database...');
+      console.log('User ID:', userId, 'Email:', userEmail, 'Product:', productName, 'Type:', productType);
+      
+      // Update user subscription status in Supabase
+      if (supabase) {
+        try {
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update({
+              subscription_status: 'active',
+              subscription_type: productType,
+              subscription_product: productName,
+              stripe_customer_id: session.customer,
+              stripe_subscription_id: session.subscription,
+              updated_at: new Date().toISOString()
+            })
+            .eq('user_id', userId);
+            
+          if (updateError) {
+            console.error('❌ Error updating user subscription:', updateError);
+          } else {
+            console.log('✅ User subscription updated successfully');
+          }
+        } catch (dbError) {
+          console.error('❌ Database error updating subscription:', dbError);
+        }
+      } else {
+        console.log('⚠️ Database not available, skipping subscription update');
+      }
+    }
+    
+    // Always respond with 200 to acknowledge receipt
+    res.status(200).json({ received: true });
+    
+  } catch (error) {
+    console.error('❌ Webhook handler error:', error);
+    res.status(200).json({ received: true });
+  }
+}
+
 // Handle preflight OPTIONS requests for CORS
 router.options('*', (req, res) => {
   console.log('🔍 Stripe route OPTIONS preflight request');
@@ -179,7 +262,6 @@ router.post('/checkout-session', authenticateUser, async (req, res) => {
     if (Buffer.isBuffer(body))    { try { body = JSON.parse(body.toString('utf8')); } catch {} }
 
     const { priceId, plan, lookup_key, success_url, cancel_url } = body || {};
-    console.log('🔍 Checkout session request:', { priceId, plan, lookup_key, userId, userEmail });
 
     if (!stripe) {
       return res.status(503).json({ error: 'Stripe service unavailable' });
@@ -189,14 +271,7 @@ router.post('/checkout-session', authenticateUser, async (req, res) => {
     let resolved;
     try {
       resolved = await resolvePrice({ priceId, plan, lookup_key });
-      console.log('✅ Resolved price data:', {
-        priceId: resolved.priceId,
-        planLookupKey: resolved.planLookupKey,
-        productName: resolved.productName,
-        productType: resolved.productType
-      });
     } catch (e) {
-      console.error('❌ Error resolving price:', e.message);
       return res.status(400).json({ error: e.message });
     }
 
@@ -204,22 +279,19 @@ router.post('/checkout-session', authenticateUser, async (req, res) => {
     const successURL = success_url || `${siteUrl}/billing/success?session_id={CHECKOUT_SESSION_ID}`;
     const cancelURL  = cancel_url  || `${siteUrl}/billing/cancel`;
 
-    const metadata = {
-      userId: String(userId),
-      userEmail: String(userEmail),
-      plan_lookup_key: resolved.planLookupKey || '',   // <— include for downstream logic
-      product_name: resolved.productName || '',
-      product_type: resolved.productType || '',        // <— CRITICAL: needed by webhook
-    };
-    console.log('🔍 Session metadata being set:', metadata);
-
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       line_items: [{ price: resolved.priceId, quantity: 1 }],
       customer_email: userEmail,
       success_url: successURL,
       cancel_url: cancelURL,
-      metadata: metadata,
+      metadata: {
+        userId: String(userId),
+        userEmail: String(userEmail),
+        plan_lookup_key: resolved.planLookupKey || '',   // <— include for downstream logic
+        product_name: resolved.productName || '',
+        product_type: resolved.productType || '',        // <— CRITICAL: needed by webhook
+      },
       automatic_tax: { enabled: true },
     });
 
@@ -388,7 +460,6 @@ router.post('/create-checkout-session', authenticateUser, async (req, res) => {
     if (Buffer.isBuffer(body))    { try { body = JSON.parse(body.toString('utf8')); } catch {} }
 
     const { priceId, plan, lookup_key, success_url, cancel_url } = body || {};
-    console.log('🔍 Hosted checkout session request:', { priceId, plan, lookup_key, userId: req.user?.id, userEmail: req.user?.email });
 
     if (!stripe) {
       return res.status(503).json({ error: 'Stripe service unavailable' });
@@ -398,14 +469,7 @@ router.post('/create-checkout-session', authenticateUser, async (req, res) => {
     let resolved;
     try {
       resolved = await resolvePrice({ priceId, plan, lookup_key });
-      console.log('✅ Hosted resolved price data:', {
-        priceId: resolved.priceId,
-        planLookupKey: resolved.planLookupKey,
-        productName: resolved.productName,
-        productType: resolved.productType
-      });
     } catch (e) {
-      console.error('❌ Error resolving price in hosted:', e.message);
       return res.status(400).json({ error: e.message });
     }
 
@@ -413,21 +477,18 @@ router.post('/create-checkout-session', authenticateUser, async (req, res) => {
     const successURL = success_url || `${defaultSite}/billing/success?session_id={CHECKOUT_SESSION_ID}`;
     const cancelURL  = cancel_url  || `${defaultSite}/billing/cancel`;
 
-    const hostedMetadata = {
-      userId: String(req.user?.id || req.user?.sub || ''),
-      userEmail: String(req.user?.email || ''),           // Fix: use userEmail not email
-      plan_lookup_key: resolved.planLookupKey || '',
-      product_name: resolved.productName || '',
-      product_type: resolved.productType || ''            // <— CRITICAL: needed by webhook
-    };
-    console.log('🔍 Hosted session metadata being set:', hostedMetadata);
-
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       line_items: [{ price: resolved.priceId, quantity: 1 }],
       success_url: successURL,
       cancel_url: cancelURL,
-      metadata: hostedMetadata
+      metadata: {
+        userId: String(req.user?.id || req.user?.sub || ''),
+        userEmail: String(req.user?.email || ''),           // Fix: use userEmail not email
+        plan_lookup_key: resolved.planLookupKey || '',
+        product_name: resolved.productName || '',
+        product_type: resolved.productType || ''            // <— CRITICAL: needed by webhook
+      }
     });
 
     return res.status(200).json({ id: session.id, url: session.url });
@@ -491,3 +552,4 @@ router.post('/cancel-subscription', authenticateUser, async (req, res) => {
 });
 
 module.exports = router;
+module.exports.handleStripeWebhook = handleStripeWebhook;
