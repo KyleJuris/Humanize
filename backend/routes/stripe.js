@@ -88,7 +88,12 @@ async function resolvePrice({ priceId, plan, lookup_key }) {
     if (!isValidPriceId(priceId)) {
       throw new Error('Invalid priceId provided');
     }
-    return { priceId, planLookupKey: null, productName: VALID_PRODUCTS[priceId]?.name || null };
+    return { 
+      priceId, 
+      planLookupKey: null, 
+      productName: VALID_PRODUCTS[priceId]?.name || null,
+      productType: VALID_PRODUCTS[priceId]?.type || null
+    };
   }
 
   // Prefer explicit plan or lookup_key
@@ -107,10 +112,15 @@ async function resolvePrice({ priceId, plan, lookup_key }) {
   const p = list.data[0];
   if (!p) throw new Error(`No active price found for lookup_key=${key}`);
 
+  // Derive product type from lookup key
+  const productType = key === 'humanizer_pro_monthly' ? 'pro' : 
+                     key === 'humanizer_ultra_monthly' ? 'ultra' : null;
+
   const resolved = {
     priceId: p.id,
     planLookupKey: p.lookup_key || key,
-    productName: typeof p.product === 'object' ? p.product.name : null
+    productName: typeof p.product === 'object' ? p.product.name : null,
+    productType: productType
   };
   return resolved;
 }
@@ -192,6 +202,7 @@ router.post('/checkout-session', authenticateUser, async (req, res) => {
         userEmail: String(userEmail),
         plan_lookup_key: resolved.planLookupKey || '',   // <— include for downstream logic
         product_name: resolved.productName || '',
+        product_type: resolved.productType || '',        // <— CRITICAL: needed by webhook
       },
       automatic_tax: { enabled: true },
     });
@@ -374,9 +385,10 @@ router.post('/create-checkout-session', authenticateUser, async (req, res) => {
       cancel_url: cancelURL,
       metadata: {
         userId: String(req.user?.id || req.user?.sub || ''),
-        email: String(req.user?.email || ''),
+        userEmail: String(req.user?.email || ''),           // Fix: use userEmail not email
         plan_lookup_key: resolved.planLookupKey || '',
-        product_name: resolved.productName || ''
+        product_name: resolved.productName || '',
+        product_type: resolved.productType || ''            // <— CRITICAL: needed by webhook
       }
     });
 
